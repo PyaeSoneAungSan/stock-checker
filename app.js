@@ -1,15 +1,34 @@
 import { getInitialItems } from './sample-data.js';
 import { getProductSvg } from './icons.js';
+import { translations } from './i18n.js';
 
 // Application State
-const STORAGE_KEY = 'runcitcheck_items_v2';
+const STORAGE_KEY = 'runcitcheck_items_v3';
+const LANG_KEY = 'runcitcheck_lang_v1';
 
+let currentLang = localStorage.getItem(LANG_KEY) || 'en'; // 'en' | 'my'
 let items = [];
 let activeSection = 'ALL'; // 'ALL' | 'DIY' | 'Medicine'
 let activeFilter = 'all'; // 'all' | 'low_or_out' | 'expiring' | 'missing_tag' | 'unchecked'
 let searchQuery = '';
 let sortBy = 'location'; // Default to rack location for walk-through aisle auditing
 let soundEnabled = true;
+
+// Translation helper
+export function t(key) {
+  const dict = translations[currentLang] || translations.en;
+  return dict[key] || translations.en[key] || key;
+}
+
+// Language Switcher
+export function setLanguage(lang) {
+  if (lang !== 'en' && lang !== 'my') return;
+  currentLang = lang;
+  localStorage.setItem(LANG_KEY, lang);
+  updateStaticTexts();
+  renderApp();
+  showToast(currentLang === 'my' ? 'ဘာသာစကားကို မြန်မာဘာသာသို့ ပြောင်းလဲပြီးပါပြီ' : 'Language switched to English', 'info');
+}
 
 // Sound effects generator using Web Audio API
 class SoundFX {
@@ -37,21 +56,21 @@ class SoundFX {
 
       const now = this.ctx.currentTime;
       if (type === 'cycle_green') {
-        osc.frequency.setValueAtTime(523.25, now); // C5
-        osc.frequency.exponentialRampToValueAtTime(659.25, now + 0.08); // E5
+        osc.frequency.setValueAtTime(523.25, now);
+        osc.frequency.exponentialRampToValueAtTime(659.25, now + 0.08);
         gain.gain.setValueAtTime(0.12, now);
         gain.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
         osc.start(now);
         osc.stop(now + 0.12);
       } else if (type === 'cycle_yellow') {
-        osc.frequency.setValueAtTime(440, now); // A4
+        osc.frequency.setValueAtTime(440, now);
         gain.gain.setValueAtTime(0.12, now);
         gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
         osc.start(now);
         osc.stop(now + 0.1);
       } else if (type === 'cycle_red') {
-        osc.frequency.setValueAtTime(329.63, now); // E4
-        osc.frequency.exponentialRampToValueAtTime(261.63, now + 0.1); // C4
+        osc.frequency.setValueAtTime(329.63, now);
+        osc.frequency.exponentialRampToValueAtTime(261.63, now + 0.1);
         gain.gain.setValueAtTime(0.14, now);
         gain.gain.exponentialRampToValueAtTime(0.01, now + 0.14);
         osc.start(now);
@@ -64,7 +83,7 @@ class SoundFX {
         osc.stop(now + 0.08);
       }
     } catch (e) {
-      // Audio not permitted or failed
+      // Audio not supported
     }
   }
 }
@@ -97,14 +116,15 @@ function getExpiryInfo(expiryDateStr) {
   const daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
   if (daysLeft < 0) {
+    const absDays = Math.abs(daysLeft);
     return {
       hasExpiry: true,
       daysLeft,
       status: 'expired',
       isExpiringSoon: true,
-      label: 'EXPIRED',
+      label: currentLang === 'my' ? `သက်တမ်းကုန်ပြီ (${absDays}ရက်)` : `${t('expiredBadge')} (${absDays}d ago)`,
       badgeClass: 'bg-red-600 text-white font-extrabold',
-      desc: `Expired ${Math.abs(daysLeft)}d ago (${expiryDateStr})`
+      desc: currentLang === 'my' ? `${absDays} ရက် လွန်သွားပါပြီ (${expiryDateStr})` : `Expired ${absDays}d ago (${expiryDateStr})`
     };
   } else if (daysLeft <= 30) {
     return {
@@ -112,9 +132,9 @@ function getExpiryInfo(expiryDateStr) {
       daysLeft,
       status: 'critical',
       isExpiringSoon: true,
-      label: `CRITICAL (${daysLeft}d left)`,
+      label: currentLang === 'my' ? `အရေးပေါ် (${daysLeft}ရက် လို)` : `${t('criticalBadge')} (${daysLeft}d left)`,
       badgeClass: 'bg-rose-500 text-white animate-subtle-pulse font-extrabold',
-      desc: `Luput dlm ${daysLeft} hari (${expiryDateStr})`
+      desc: currentLang === 'my' ? `${daysLeft} ရက် လိုသေး (${expiryDateStr})` : `${daysLeft} days left (${expiryDateStr})`
     };
   } else if (daysLeft <= 90) {
     return {
@@ -122,9 +142,9 @@ function getExpiryInfo(expiryDateStr) {
       daysLeft,
       status: 'warning',
       isExpiringSoon: true,
-      label: `EXPIRING (${daysLeft}d left)`,
+      label: currentLang === 'my' ? `သက်တမ်းကုန်ခါနီး (${daysLeft}ရက်)` : `${t('expiringBadge')} (${daysLeft}d left)`,
       badgeClass: 'bg-amber-500 text-white font-bold',
-      desc: `Luput dlm ${daysLeft} hari (${expiryDateStr})`
+      desc: currentLang === 'my' ? `${daysLeft} ရက် လိုသေး (${expiryDateStr})` : `${daysLeft} days left (${expiryDateStr})`
     };
   } else {
     return {
@@ -134,7 +154,7 @@ function getExpiryInfo(expiryDateStr) {
       isExpiringSoon: false,
       label: `Exp: ${expiryDateStr}`,
       badgeClass: 'bg-slate-100 text-slate-700 border border-slate-200',
-      desc: `Selamat: Luput ${expiryDateStr}`
+      desc: `Safe: ${expiryDateStr}`
     };
   }
 }
@@ -164,7 +184,7 @@ function saveData() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
   } catch (err) {
     console.error('Failed to save to localStorage:', err);
-    showToast('Amaran: Gagal menyimpan data!', 'error');
+    showToast(currentLang === 'my' ? 'ဒေတာ သိမ်းဆည်းရန် မအောင်မြင်ပါ!' : 'Failed to save data!', 'error');
   }
 }
 
@@ -213,22 +233,23 @@ export function cycleStockStatus(id) {
   let soundType = 'cycle_green';
   let toastMsg = '';
 
+  const itemName = currentLang === 'my' && item.aliasBurmese ? item.aliasBurmese : item.name;
+
   if (current === 'in_stock') {
     next = 'low_stock';
     soundType = 'cycle_yellow';
-    toastMsg = `🟡 ${item.name}: STOK RENDAH`;
+    toastMsg = currentLang === 'my' ? `🟡 ${itemName}: ${t('lowStock')}` : `🟡 ${itemName}: LOW STOCK`;
   } else if (current === 'low_stock') {
     next = 'out_of_stock';
     soundType = 'cycle_red';
-    toastMsg = `🔴 ${item.name}: HABIS STOK`;
+    toastMsg = currentLang === 'my' ? `🔴 ${itemName}: ${t('outOfStock')}` : `🔴 ${itemName}: OUT OF STOCK`;
   } else {
     next = 'in_stock';
     soundType = 'cycle_green';
-    toastMsg = `🟢 ${item.name}: ADA STOK`;
+    toastMsg = currentLang === 'my' ? `🟢 ${itemName}: ${t('inStock')}` : `🟢 ${itemName}: IN STOCK`;
   }
 
   item.stockStatus = next;
-  // Mark as checked today when staff inspects/updates it
   item.checkedToday = true;
   item.lastCheckedTime = new Date().toISOString();
 
@@ -253,10 +274,12 @@ export function togglePriceTag(id) {
   saveData();
   renderApp();
 
+  const itemName = currentLang === 'my' && item.aliasBurmese ? item.aliasBurmese : item.name;
+
   if (item.priceTagChecked) {
-    showToast(`🏷️ Tanda harga "${item.name}" OK`, 'success');
+    showToast(currentLang === 'my' ? `🏷️ "${itemName}" ဈေးနှုန်းကတ်ပြား ရှိပါသည်` : `🏷️ Price tag for "${item.name}" verified OK`, 'success');
   } else {
-    showToast(`⚠️ Tanda harga "${item.name}" HILANG`, 'warning');
+    showToast(currentLang === 'my' ? `⚠️ "${itemName}" ဈေးနှုန်းကတ် မရှိပါ` : `⚠️ Price tag for "${item.name}" marked MISSING`, 'warning');
   }
 }
 
@@ -273,7 +296,12 @@ export function toggleDailyChecked(id) {
   saveData();
   renderApp();
 
-  showToast(item.checkedToday ? `✓ Disemak: ${item.name}` : `Batal semak: ${item.name}`, 'info');
+  const itemName = currentLang === 'my' && item.aliasBurmese ? item.aliasBurmese : item.name;
+  if (item.checkedToday) {
+    showToast(currentLang === 'my' ? `✓ စစ်ဆေးပြီး: ${itemName}` : `✓ Audited: ${item.name}`, 'info');
+  } else {
+    showToast(currentLang === 'my' ? `စစ်ဆေးမှု ပယ်ဖျက်သည်: ${itemName}` : `Unmarked: ${item.name}`, 'info');
+  }
 }
 
 // Reset Daily Check for all items
@@ -283,7 +311,7 @@ export function resetDailyCheck() {
   });
   saveData();
   renderApp();
-  showToast('Semua semakan harian telah di-reset untuk giliran baru!', 'info');
+  showToast(t('toastResetShift'), 'info');
 }
 
 // Filter and Sort Items
@@ -294,15 +322,20 @@ function getFilteredItems() {
       return false;
     }
 
-    // 2. Search Query (name, malay alias, category, shelfLocation, notes)
+    // 2. Search Query (name, burmese alias, english alias, category, shelfLocation, notes)
     if (searchQuery.trim() !== '') {
       const q = searchQuery.toLowerCase().trim();
       const match =
         (item.name && item.name.toLowerCase().includes(q)) ||
+        (item.aliasBurmese && item.aliasBurmese.toLowerCase().includes(q)) ||
+        (item.aliasEnglish && item.aliasEnglish.toLowerCase().includes(q)) ||
         (item.aliasMalay && item.aliasMalay.toLowerCase().includes(q)) ||
         (item.category && item.category.toLowerCase().includes(q)) ||
+        (item.categoryBurmese && item.categoryBurmese.toLowerCase().includes(q)) ||
         (item.shelfLocation && item.shelfLocation.toLowerCase().includes(q)) ||
-        (item.notes && item.notes.toLowerCase().includes(q));
+        (item.shelfLocationBurmese && item.shelfLocationBurmese.toLowerCase().includes(q)) ||
+        (item.notes && item.notes.toLowerCase().includes(q)) ||
+        (item.notesBurmese && item.notesBurmese.toLowerCase().includes(q));
       if (!match) return false;
     }
 
@@ -321,9 +354,13 @@ function getFilteredItems() {
     return true;
   }).sort((a, b) => {
     if (sortBy === 'location') {
-      return (a.shelfLocation || '').localeCompare(b.shelfLocation || '', undefined, { numeric: true, sensitivity: 'base' });
+      const locA = currentLang === 'my' ? (a.shelfLocationBurmese || a.shelfLocation || '') : (a.shelfLocation || '');
+      const locB = currentLang === 'my' ? (b.shelfLocationBurmese || b.shelfLocation || '') : (b.shelfLocation || '');
+      return locA.localeCompare(locB, undefined, { numeric: true, sensitivity: 'base' });
     } else if (sortBy === 'name') {
-      return (a.name || '').localeCompare(b.name || '');
+      const nameA = currentLang === 'my' && a.aliasBurmese ? a.aliasBurmese : a.name;
+      const nameB = currentLang === 'my' && b.aliasBurmese ? b.aliasBurmese : b.name;
+      return nameA.localeCompare(nameB);
     } else if (sortBy === 'expiry') {
       const expA = a.expiryDate ? new Date(a.expiryDate).getTime() : 9999999999999;
       const expB = b.expiryDate ? new Date(b.expiryDate).getTime() : 9999999999999;
@@ -353,16 +390,16 @@ function getStats() {
   return { total, checked, outOfStock, lowStock, expiringSoon, missingPriceTag, percent };
 }
 
-// Generate Boss WhatsApp Report
+// Generate Boss WhatsApp Report in English or Burmese
 export function generateWhatsAppReport() {
   const now = new Date();
-  const dateFormatted = now.toLocaleDateString('ms-MY', {
-    weekday: 'long',
+  const dateStr = now.toLocaleDateString(currentLang === 'my' ? 'my-MM' : 'en-GB', {
+    weekday: 'short',
     day: 'numeric',
     month: 'short',
     year: 'numeric'
   });
-  const timeFormatted = now.toLocaleTimeString('ms-MY', { hour: '2-digit', minute: '2-digit' });
+  const timeStr = now.toLocaleTimeString(currentLang === 'my' ? 'my-MM' : 'en-US', { hour: '2-digit', minute: '2-digit' });
 
   const total = items.length;
   const checked = items.filter(i => i.checkedToday).length;
@@ -374,66 +411,150 @@ export function generateWhatsAppReport() {
   });
   const missingTagList = items.filter(i => !i.priceTagChecked);
 
-  let text = `📋 *LAPORAN STOK HARIAN (DAILY AISLE CHECK)*\n`;
-  text += `🏪 *Kedai*: Mini Mart Maju\n`;
-  text += `📅 *Masa*: ${dateFormatted} | ${timeFormatted}\n`;
-  text += `📊 *Kemajuan Semakan*: ${checked}/${total} Barangan (${Math.round((checked / total) * 100)}% Selesai)\n`;
+  let text = `${t('waReportHeader')}\n`;
+  text += `${t('waStore')}\n`;
+  text += `📅 *Date/Time*: ${dateStr} | ${timeStr}\n`;
+  text += `${t('waAuditProgress')}: ${checked}/${total} (${Math.round((checked / total) * 100)}% ${t('waCompleted')})\n`;
   text += `--------------------------------------\n\n`;
 
   // 1. Out of stock
-  text += `🔴 *HABIS STOK / PERLU ORDER (${outOfStockList.length} Item)*:\n`;
+  text += `${t('waOutOfStockTitle')} (${outOfStockList.length} items):\n`;
   if (outOfStockList.length === 0) {
-    text += `  ✅ Tiada barang habis stok. Semua mencukupi!\n`;
+    text += `  ${t('waNoOutOfStock')}\n`;
   } else {
     outOfStockList.forEach((it, idx) => {
-      text += `  ${idx + 1}. *${it.name}* (${it.aliasMalay || it.category})\n`;
-      text += `     📍 Lokasi: ${it.shelfLocation} | Harga: ${formatRM(it.price)}\n`;
+      const alias = currentLang === 'my' && it.aliasBurmese ? it.aliasBurmese : (it.aliasEnglish || it.aliasMalay || '');
+      const shelf = currentLang === 'my' && it.shelfLocationBurmese ? it.shelfLocationBurmese : it.shelfLocation;
+      text += `  ${idx + 1}. *${it.name}*${alias ? ` (${alias})` : ''}\n`;
+      text += `     📍 ${shelf} | ${formatRM(it.price)}\n`;
     });
   }
   text += `\n`;
 
   // 2. Low stock
-  text += `🟡 *STOK RENDAH (${lowStockList.length} Item)*:\n`;
+  text += `${t('waLowStockTitle')} (${lowStockList.length} items):\n`;
   if (lowStockList.length === 0) {
-    text += `  ✅ Tiada stok rendah dikesan.\n`;
+    text += `  ${t('waNoLowStock')}\n`;
   } else {
     lowStockList.forEach((it, idx) => {
-      text += `  ${idx + 1}. *${it.name}* (Baki: ${it.stockQty || 'Sedikit'})\n`;
-      text += `     📍 Lokasi: ${it.shelfLocation}\n`;
+      const shelf = currentLang === 'my' && it.shelfLocationBurmese ? it.shelfLocationBurmese : it.shelfLocation;
+      const qtyLabel = currentLang === 'my' ? `လက်ကျန်: ${it.stockQty || 'နည်း'}` : `Qty: ${it.stockQty || 'Low'}`;
+      text += `  ${idx + 1}. *${it.name}* (${qtyLabel})\n`;
+      text += `     📍 ${shelf}\n`;
     });
   }
   text += `\n`;
 
   // 3. Expiring Soon
-  text += `⚠️ *TARIKH LUPUT HAMPIR / <90 HARI (${expiringSoonList.length} Item)*:\n`;
+  text += `${t('waExpiringTitle')} (${expiringSoonList.length} items):\n`;
   if (expiringSoonList.length === 0) {
-    text += `  ✅ Tiada ubat/barangan yang tamat tempoh dalam masa 90 hari.\n`;
+    text += `  ${t('waNoExpiring')}\n`;
   } else {
     expiringSoonList.forEach((it, idx) => {
       const exp = getExpiryInfo(it.expiryDate);
       const alertEmoji = exp.daysLeft <= 30 ? '🚨' : '⏳';
+      const shelf = currentLang === 'my' && it.shelfLocationBurmese ? it.shelfLocationBurmese : it.shelfLocation;
+      const daysText = currentLang === 'my' 
+        ? (exp.daysLeft < 0 ? 'သက်တမ်းကုန်ပြီ' : `${exp.daysLeft} ရက် လိုသေး`)
+        : (exp.daysLeft < 0 ? 'EXPIRED' : `${exp.daysLeft}d left`);
       text += `  ${idx + 1}. ${alertEmoji} *${it.name}*\n`;
-      text += `     Luput: ${it.expiryDate} (${exp.daysLeft < 0 ? 'TELAH LUPUT' : exp.daysLeft + ' hari lagi'})\n`;
-      text += `     📍 Lokasi: ${it.shelfLocation}\n`;
+      text += `     Exp: ${it.expiryDate} (${daysText})\n`;
+      text += `     📍 ${shelf}\n`;
     });
   }
   text += `\n`;
 
   // 4. Missing Price Tags
-  text += `🏷️ *TANDA HARGA HILANG / PERLU PRINT (${missingTagList.length} Item)*:\n`;
+  text += `${t('waMissingTagsTitle')} (${missingTagList.length} items):\n`;
   if (missingTagList.length === 0) {
-    text += `  ✅ Semua tanda harga lengkap di rak.\n`;
+    text += `  ${t('waNoMissingTags')}\n`;
   } else {
     missingTagList.forEach((it, idx) => {
+      const shelf = currentLang === 'my' && it.shelfLocationBurmese ? it.shelfLocationBurmese : it.shelfLocation;
       text += `  ${idx + 1}. *${it.name}* -> *${formatRM(it.price)}*\n`;
-      text += `     📍 Lokasi: ${it.shelfLocation}\n`;
+      text += `     📍 ${shelf}\n`;
     });
   }
 
   text += `\n--------------------------------------\n`;
-  text += `_Dihantar melalui Sistem Semakan Mudah Alih RuncitCheck_`;
+  text += `${t('waFooter')}`;
 
   return text;
+}
+
+// Update Static HTML Elements on language toggle
+function updateStaticTexts() {
+  // App Title & Subtitle
+  const titleEl = document.getElementById('header-app-title');
+  const subEl = document.getElementById('header-app-subtitle');
+  const badgeEl = document.getElementById('header-badge-country');
+  const addBtnText = document.getElementById('btn-add-item-text');
+  const langPillText = document.getElementById('current-lang-text');
+  const searchInput = document.getElementById('search-input');
+  const quickReportBtnText = document.getElementById('btn-quick-report-text');
+
+  if (titleEl) titleEl.textContent = t('appTitle');
+  if (subEl) subEl.textContent = t('appSubtitle');
+  if (badgeEl) badgeEl.textContent = t('badgeCountry');
+  if (addBtnText) addBtnText.textContent = t('addItemBtn');
+  if (quickReportBtnText) quickReportBtnText.textContent = t('copyReportBoss');
+  if (langPillText) langPillText.textContent = currentLang === 'my' ? '🇲🇲 မြန်မာ' : '🇬🇧 EN';
+  if (searchInput) searchInput.placeholder = t('searchPlaceholder');
+
+  // Sort dropdown
+  const sortSelect = document.getElementById('sort-select');
+  if (sortSelect) {
+    sortSelect.innerHTML = `
+      <option value="location">${t('sortLocation')}</option>
+      <option value="expiry">${t('sortExpiry')}</option>
+      <option value="status">${t('sortStatus')}</option>
+      <option value="name">${t('sortName')}</option>
+      <option value="default">${t('sortDefault')}</option>
+    `;
+    sortSelect.value = sortBy;
+  }
+
+  // Update Settings Modal Texts
+  const settingsTitleEl = document.getElementById('settings-modal-title');
+  const settingsSubEl = document.getElementById('settings-modal-sub');
+  const labelSoundEl = document.getElementById('label-sound');
+  const descSoundEl = document.getElementById('desc-sound');
+  const btnToggleSound = document.getElementById('btn-toggle-sound');
+  const labelBackupEl = document.getElementById('label-backup-title');
+  const descBackupEl = document.getElementById('desc-backup-desc');
+  const btnExportJsonText = document.getElementById('btn-export-json-text');
+  const btnImportJsonText = document.getElementById('btn-import-json-text');
+  const labelResetSampleEl = document.getElementById('label-reset-sample');
+  const descResetSampleEl = document.getElementById('desc-reset-sample');
+  const btnResetSampleText = document.getElementById('btn-reset-sample-text');
+  const btnCloseSettings = document.getElementById('btn-close-settings');
+
+  if (settingsTitleEl) settingsTitleEl.textContent = t('settingsTitle');
+  if (settingsSubEl) settingsSubEl.textContent = t('settingsSubtitle');
+  if (labelSoundEl) labelSoundEl.textContent = t('labelSound');
+  if (descSoundEl) descSoundEl.textContent = t('soundDesc');
+  if (btnToggleSound) btnToggleSound.textContent = soundEnabled ? t('soundOn') : t('soundOff');
+  if (labelBackupEl) labelBackupEl.textContent = t('backupTitle');
+  if (descBackupEl) descBackupEl.textContent = t('backupDesc');
+  if (btnExportJsonText) btnExportJsonText.textContent = t('btnExportJson');
+  if (btnImportJsonText) btnImportJsonText.textContent = t('btnImportJson');
+  if (labelResetSampleEl) labelResetSampleEl.textContent = t('resetSampleTitle');
+  if (descResetSampleEl) descResetSampleEl.textContent = t('resetSampleDesc');
+  if (btnResetSampleText) btnResetSampleText.textContent = t('btnResetSample');
+  if (btnCloseSettings) btnCloseSettings.textContent = t('btnClose');
+
+  // Update WhatsApp Modal Texts
+  const reportModalTitle = document.getElementById('report-modal-title');
+  const reportModalSub = document.getElementById('report-modal-sub');
+  const reportModalDesc = document.getElementById('report-modal-desc');
+  const btnCopyReportText = document.getElementById('btn-copy-report-text');
+  const btnShareWhatsappText = document.getElementById('btn-share-whatsapp-text');
+
+  if (reportModalTitle) reportModalTitle.textContent = t('reportTitle');
+  if (reportModalSub) reportModalSub.textContent = t('reportSubtitle');
+  if (reportModalDesc) reportModalDesc.textContent = t('reportDesc');
+  if (btnCopyReportText) btnCopyReportText.textContent = t('btnCopyReport');
+  if (btnShareWhatsappText) btnShareWhatsappText.textContent = t('btnShareWhatsapp');
 }
 
 // Render Summary & KPI Cards
@@ -444,7 +565,7 @@ function renderSummary() {
 
   summaryEl.innerHTML = `
     <div class="bg-gradient-to-br from-slate-900 via-slate-800 to-emerald-950 text-white rounded-2xl p-4 shadow-lg border border-slate-700/60 relative overflow-hidden">
-      <!-- Background pattern -->
+      <!-- Background glow -->
       <div class="absolute -right-6 -bottom-6 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none"></div>
 
       <!-- Top Header Row -->
@@ -454,9 +575,9 @@ function renderSummary() {
             ✓
           </span>
           <div>
-            <h2 class="text-[11px] font-bold tracking-wider text-emerald-400 uppercase">Semakan Harian (Daily Check)</h2>
+            <h2 class="text-[11px] font-bold tracking-wider text-emerald-400 uppercase">${t('dailyCheckTitle')}</h2>
             <div class="text-sm font-extrabold flex items-center gap-2">
-              <span>${stats.checked} / ${stats.total} Barangan</span>
+              <span>${stats.checked} / ${stats.total} ${t('itemsChecked')}</span>
               <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${stats.percent === 100 ? 'bg-emerald-500 text-white' : 'bg-slate-700 text-slate-300'}">
                 ${stats.percent}%
               </span>
@@ -467,7 +588,7 @@ function renderSummary() {
         <div class="flex items-center gap-1.5">
           <button id="btn-open-report" class="active-press inline-flex items-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-md transition-colors">
             <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z"/></svg>
-            <span>Hantar Boss</span>
+            <span>${t('sendToBossBtn')}</span>
           </button>
         </div>
       </div>
@@ -485,25 +606,25 @@ function renderSummary() {
             <span class="w-2 h-2 rounded-full bg-red-500"></span>
             <span class="text-sm font-black text-red-400">${stats.outOfStock}</span>
           </div>
-          <span class="text-[10px] uppercase font-bold tracking-tight text-slate-400 mt-0.5">Habis</span>
+          <span class="text-[10px] uppercase font-bold tracking-tight text-slate-400 mt-0.5">${t('kpiOutOfStock')}</span>
         </button>
 
         <!-- Low stock -->
         <button data-filter-kpi="low_or_out" class="active-press flex flex-col items-center justify-center p-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 border ${activeFilter === 'low_or_out' ? 'border-amber-500 bg-amber-950/40 text-amber-300' : 'border-slate-700/80 text-slate-300'} transition-all">
           <span class="text-sm font-black text-amber-400">${stats.lowStock}</span>
-          <span class="text-[10px] uppercase font-bold tracking-tight text-slate-400 mt-0.5">Rendah</span>
+          <span class="text-[10px] uppercase font-bold tracking-tight text-slate-400 mt-0.5">${t('kpiLowStock')}</span>
         </button>
 
         <!-- Expiring Soon -->
         <button data-filter-kpi="expiring" class="active-press flex flex-col items-center justify-center p-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 border ${activeFilter === 'expiring' ? 'border-orange-500 bg-orange-950/40 text-orange-300 ring-2 ring-orange-500/30' : 'border-slate-700/80 text-slate-300'} transition-all">
           <span class="text-sm font-black text-orange-400">${stats.expiringSoon}</span>
-          <span class="text-[10px] uppercase font-bold tracking-tight text-slate-400 mt-0.5">&lt;90 Hari</span>
+          <span class="text-[10px] uppercase font-bold tracking-tight text-slate-400 mt-0.5">${t('kpiExpiringSoon')}</span>
         </button>
 
         <!-- Missing Tag -->
         <button data-filter-kpi="missing_tag" class="active-press flex flex-col items-center justify-center p-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 border ${activeFilter === 'missing_tag' ? 'border-yellow-400 bg-yellow-950/40 text-yellow-300 ring-2 ring-yellow-400/30' : 'border-slate-700/80 text-slate-300'} transition-all">
           <span class="text-sm font-black text-yellow-300">${stats.missingPriceTag}</span>
-          <span class="text-[10px] uppercase font-bold tracking-tight text-slate-400 mt-0.5">Tiada Tag</span>
+          <span class="text-[10px] uppercase font-bold tracking-tight text-slate-400 mt-0.5">${t('kpiMissingTag')}</span>
         </button>
       </div>
     </div>
@@ -530,11 +651,11 @@ function renderFilterChips() {
   if (!container) return;
 
   const chips = [
-    { id: 'all', label: 'Semua' },
-    { id: 'low_or_out', label: '⚠️ Habis/Rendah' },
-    { id: 'expiring', label: '⏳ Luput &lt;90h' },
-    { id: 'missing_tag', label: '🏷️ Tiada Tag' },
-    { id: 'unchecked', label: '👁️ Belum Semak' }
+    { id: 'all', label: t('chipAll') },
+    { id: 'low_or_out', label: t('chipLowOrOut') },
+    { id: 'expiring', label: t('chipExpiring') },
+    { id: 'missing_tag', label: t('chipMissingTag') },
+    { id: 'unchecked', label: t('chipUnchecked') }
   ];
 
   container.innerHTML = chips.map(c => `
@@ -555,23 +676,27 @@ function renderFilterChips() {
 function renderItemCards() {
   const container = document.getElementById('items-list-container');
   const countBadge = document.getElementById('search-result-count');
+  const hintText = document.getElementById('search-result-hint');
   if (!container) return;
 
   const filtered = getFilteredItems();
   if (countBadge) {
-    countBadge.textContent = `${filtered.length} item dijumpai`;
+    countBadge.textContent = `${filtered.length} ${t('itemsFound')}`;
+  }
+  if (hintText) {
+    hintText.textContent = t('tapToCycleHint');
   }
 
   if (filtered.length === 0) {
     container.innerHTML = `
       <div class="text-center py-12 px-4 bg-white rounded-2xl border border-dashed border-slate-200">
         <div class="text-4xl mb-3">🔍</div>
-        <h3 class="text-sm font-bold text-slate-800">Tiada Barangan Dijumpai</h3>
+        <h3 class="text-sm font-bold text-slate-800">${t('noItemsTitle')}</h3>
         <p class="text-xs text-slate-500 mt-1 max-w-xs mx-auto">
-          Cuba tukar kata kunci carian atau reset filter di bahagian atas.
+          ${t('noItemsDesc')}
         </p>
         <button id="btn-reset-filters-empty" class="active-press mt-4 px-4 py-2 bg-emerald-600 text-white text-xs font-bold rounded-xl shadow">
-          Reset Tapisan
+          ${t('resetFilterBtn')}
         </button>
       </div>
     `;
@@ -591,15 +716,15 @@ function renderItemCards() {
 
     // Stock Status Config
     let statusBadgeClass = 'bg-emerald-50 text-emerald-800 border-emerald-300';
-    let statusText = '🟢 ADA STOK';
+    let statusText = `🟢 ${t('inStock')}`;
     let statusBorderClass = '';
 
     if (item.stockStatus === 'low_stock') {
       statusBadgeClass = 'bg-amber-50 text-amber-900 border-amber-300';
-      statusText = '🟡 STOK RENDAH';
+      statusText = `🟡 ${t('lowStock')}`;
     } else if (item.stockStatus === 'out_of_stock') {
       statusBadgeClass = 'bg-rose-50 text-rose-800 border-rose-300';
-      statusText = '🔴 HABIS STOK';
+      statusText = `🔴 ${t('outOfStock')}`;
       statusBorderClass = 'card-out-of-stock';
     }
 
@@ -611,8 +736,17 @@ function renderItemCards() {
 
     // Checked Today pill styling
     const checkedPill = item.checkedToday
-      ? `<span class="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">✓ Semak Hari Ini</span>`
-      : `<span class="inline-flex items-center gap-1 text-[11px] font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">Belum Semak</span>`;
+      ? `<span class="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">✓ ${t('checkedToday')}</span>`
+      : `<span class="inline-flex items-center gap-1 text-[11px] font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">${t('notChecked')}</span>`;
+
+    // Localized fields based on current language
+    const displayedAlias = currentLang === 'my'
+      ? (item.aliasBurmese || item.aliasEnglish || item.aliasMalay || '')
+      : (item.aliasEnglish || item.aliasBurmese || item.aliasMalay || '');
+
+    const displayedCategory = currentLang === 'my' && item.categoryBurmese ? item.categoryBurmese : item.category;
+    const displayedShelf = currentLang === 'my' && item.shelfLocationBurmese ? item.shelfLocationBurmese : item.shelfLocation;
+    const displayedNotes = currentLang === 'my' && item.notesBurmese ? item.notesBurmese : item.notes;
 
     // Visual thumbnail
     const svgIllustration = getProductSvg(item.svgIcon, item.section);
@@ -625,13 +759,13 @@ function renderItemCards() {
           <div class="flex items-center gap-1.5 flex-wrap">
             <!-- Section Badge -->
             <span class="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md ${item.section === 'DIY' ? 'bg-amber-100 text-amber-900 border border-amber-200' : 'bg-rose-100 text-rose-900 border border-rose-200'}">
-              ${item.section === 'DIY' ? '🔧 DIY' : '💊 Farmasi'}
+              ${item.section === 'DIY' ? (currentLang === 'my' ? '🔧 DIY' : '🔧 DIY') : (currentLang === 'my' ? '💊 ဆေးဝါး' : '💊 Med')}
             </span>
 
             <!-- Shelf Location Badge (Prominent for aisle walking) -->
-            <span class="inline-flex items-center gap-1 text-[11px] font-bold bg-slate-800 text-slate-100 px-2 py-0.5 rounded-md shadow-xs">
+            <span class="inline-flex items-center gap-1 text-[11px] font-bold bg-slate-800 text-slate-100 px-2.5 py-0.5 rounded-md shadow-xs">
               <svg class="w-3 h-3 text-emerald-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/></svg>
-              ${item.shelfLocation}
+              ${displayedShelf}
             </span>
           </div>
 
@@ -664,14 +798,14 @@ function renderItemCards() {
               ${item.name}
             </h3>
             
-            ${item.aliasMalay ? `
+            ${displayedAlias ? `
               <p class="text-[11px] font-semibold text-emerald-800 mt-0.5 line-clamp-1 italic">
-                "${item.aliasMalay}"
+                "${displayedAlias}"
               </p>
             ` : ''}
 
             <div class="flex items-center gap-2 mt-1">
-              <span class="text-[11px] text-slate-500 font-medium">${item.category}</span>
+              <span class="text-[11px] text-slate-500 font-medium">${displayedCategory}</span>
             </div>
 
             <!-- Price and Expiry info -->
@@ -690,10 +824,10 @@ function renderItemCards() {
         </div>
 
         <!-- Notes if present -->
-        ${item.notes ? `
+        ${displayedNotes ? `
           <div class="mt-2 text-[11px] text-slate-600 bg-slate-50 rounded-lg p-2 border border-slate-150 flex items-start gap-1.5">
             <span class="text-slate-400">📝</span>
-            <span class="line-clamp-2">${item.notes}</span>
+            <span class="line-clamp-2">${displayedNotes}</span>
           </div>
         ` : ''}
 
@@ -710,7 +844,7 @@ function renderItemCards() {
           <button data-action="toggle-price-tag" data-id="${item.id}" class="active-press flex items-center justify-between px-2.5 py-2 rounded-xl border text-[11px] font-extrabold transition-all shadow-xs ${item.priceTagChecked ? 'bg-emerald-50 text-emerald-800 border-emerald-300' : 'bg-red-50 text-red-700 border-red-300 animate-pulse'}">
             <div class="flex items-center gap-1 truncate">
               <span>${item.priceTagChecked ? '🏷️' : '⚠️'}</span>
-              <span class="truncate">${item.priceTagChecked ? 'Tag Harga OK' : 'Tag HILANG'}</span>
+              <span class="truncate">${item.priceTagChecked ? t('tagOk') : t('tagMissing')}</span>
             </div>
             <span class="text-xs font-black">${item.priceTagChecked ? '✓' : '✗'}</span>
           </button>
@@ -722,11 +856,11 @@ function renderItemCards() {
             <span class="w-4 h-4 rounded border flex items-center justify-center ${item.checkedToday ? 'bg-emerald-600 border-emerald-600 text-white' : 'border-slate-300 bg-white'}">
               ${item.checkedToday ? '✓' : ''}
             </span>
-            <span>${item.checkedToday ? 'Telah Disemak Hari Ini' : 'Tandakan Sudah Semak'}</span>
+            <span>${item.checkedToday ? t('checkedToday') : t('markChecked')}</span>
           </button>
 
           <span class="text-[10px] text-slate-400">
-            ${item.lastCheckedTime ? `Masa: ${new Date(item.lastCheckedTime).toLocaleTimeString('ms-MY', { hour: '2-digit', minute: '2-digit' })}` : ''}
+            ${item.lastCheckedTime ? `${t('checkedTime')}: ${new Date(item.lastCheckedTime).toLocaleTimeString(currentLang === 'my' ? 'my-MM' : 'en-US', { hour: '2-digit', minute: '2-digit' })}` : ''}
           </span>
         </div>
 
@@ -759,9 +893,9 @@ function renderItemCards() {
 // Render Section Tabs
 function renderSectionTabs() {
   const tabs = [
-    { id: 'ALL', label: 'Semua (All)' },
-    { id: 'DIY', label: '🔧 DIY' },
-    { id: 'Medicine', label: '💊 Farmasi' }
+    { id: 'ALL', label: t('tabAll') },
+    { id: 'DIY', label: t('tabDiy') },
+    { id: 'Medicine', label: t('tabMed') }
   ];
 
   const container = document.getElementById('section-tabs-container');
@@ -799,6 +933,9 @@ function openPhotoZoom(id) {
   if (!modal || !modalContent) return;
 
   const svgIllustration = getProductSvg(item.svgIcon, item.section);
+  const displayedAlias = currentLang === 'my' && item.aliasBurmese ? item.aliasBurmese : (item.aliasEnglish || item.aliasMalay || '');
+  const displayedShelf = currentLang === 'my' && item.shelfLocationBurmese ? item.shelfLocationBurmese : item.shelfLocation;
+  const displayedCategory = currentLang === 'my' && item.categoryBurmese ? item.categoryBurmese : item.category;
 
   modalContent.innerHTML = `
     <div class="relative bg-white rounded-3xl overflow-hidden max-w-sm w-full mx-4 shadow-2xl border border-slate-200 animate-in fade-in">
@@ -813,7 +950,7 @@ function openPhotoZoom(id) {
           ✕
         </button>
         <span class="absolute bottom-3 left-3 bg-slate-900/85 text-white text-xs font-bold px-2.5 py-1 rounded-lg backdrop-blur-sm">
-          📍 ${item.shelfLocation}
+          📍 ${displayedShelf}
         </span>
       </div>
 
@@ -822,20 +959,20 @@ function openPhotoZoom(id) {
           <span class="text-[10px] uppercase font-black px-2 py-0.5 rounded ${item.section === 'DIY' ? 'bg-amber-100 text-amber-800' : 'bg-rose-100 text-rose-800'}">
             ${item.section}
           </span>
-          <span class="text-xs font-bold text-slate-500">${item.category}</span>
+          <span class="text-xs font-bold text-slate-500">${displayedCategory}</span>
         </div>
         <h3 class="text-sm font-extrabold text-slate-900">${item.name}</h3>
-        ${item.aliasMalay ? `<p class="text-xs font-semibold text-emerald-800 mt-0.5">"${item.aliasMalay}"</p>` : ''}
+        ${displayedAlias ? `<p class="text-xs font-semibold text-emerald-800 mt-0.5">"${displayedAlias}"</p>` : ''}
 
         <div class="mt-3 flex items-center justify-between border-t border-slate-100 pt-3">
           <span class="price-tag text-base font-black text-slate-900">${formatRM(item.price)}</span>
           <span class="text-xs font-bold px-2.5 py-1 rounded-lg ${item.stockStatus === 'in_stock' ? 'bg-emerald-100 text-emerald-800' : (item.stockStatus === 'low_stock' ? 'bg-amber-100 text-amber-800' : 'bg-red-100 text-red-800')}">
-            ${item.stockStatus === 'in_stock' ? '🟢 Ada Stok' : (item.stockStatus === 'low_stock' ? '🟡 Stok Rendah' : '🔴 Habis')}
+            ${item.stockStatus === 'in_stock' ? `🟢 ${t('inStock')}` : (item.stockStatus === 'low_stock' ? `🟡 ${t('lowStock')}` : `🔴 ${t('outOfStock')}`)}
           </span>
         </div>
 
         <button id="btn-edit-from-photo" class="active-press mt-3 w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl shadow">
-          Edit Maklumat Barangan
+          ${t('editTitle')}
         </button>
       </div>
     </div>
@@ -863,7 +1000,8 @@ export function openAddModal() {
   editingItemId = null;
   populateItemForm(null);
   const modal = document.getElementById('item-form-modal');
-  document.getElementById('form-modal-title').textContent = 'Tambah Barangan Baru';
+  document.getElementById('form-modal-title').textContent = t('addTitle');
+  document.getElementById('form-modal-subtitle').textContent = t('formSubtitle');
   modal?.classList.remove('hidden');
   modal?.classList.add('flex');
 }
@@ -875,7 +1013,8 @@ export function openEditModal(id) {
   editingItemId = id;
   populateItemForm(item);
   const modal = document.getElementById('item-form-modal');
-  document.getElementById('form-modal-title').textContent = 'Edit Barangan';
+  document.getElementById('form-modal-title').textContent = t('editTitle');
+  document.getElementById('form-modal-subtitle').textContent = t('formSubtitle');
   modal?.classList.remove('hidden');
   modal?.classList.add('flex');
 }
@@ -884,17 +1023,40 @@ function populateItemForm(item) {
   const form = document.getElementById('item-form');
   if (!form) return;
 
+  // Localized form labels
+  document.getElementById('lbl-form-section').textContent = t('labelSection');
+  document.getElementById('lbl-form-diy').textContent = t('sectionDiy');
+  document.getElementById('lbl-form-med').textContent = t('sectionMed');
+  document.getElementById('lbl-form-name').textContent = t('labelOfficialName');
+  document.getElementById('lbl-form-alias').textContent = t('labelAlias');
+  document.getElementById('lbl-form-category').textContent = t('labelCategory');
+  document.getElementById('lbl-form-shelf').textContent = t('labelShelf');
+  document.getElementById('lbl-form-price').textContent = t('labelPrice');
+  document.getElementById('lbl-form-expiry').textContent = t('labelExpiry');
+  document.getElementById('lbl-form-stock-status').textContent = t('labelStockStatus');
+  document.getElementById('lbl-status-in-stock').textContent = t('inStock');
+  document.getElementById('lbl-status-low-stock').textContent = t('lowStock');
+  document.getElementById('lbl-status-out-stock').textContent = t('outOfStock');
+  document.getElementById('lbl-form-tag-check').textContent = t('labelTagCheck');
+  document.getElementById('desc-form-tag-check').textContent = t('tagCheckDesc');
+  document.getElementById('lbl-form-photo-ref').textContent = t('labelPhotoRef');
+  document.getElementById('btn-photo-upload-text').textContent = t('photoUploadBtn');
+  document.getElementById('lbl-form-notes').textContent = t('labelNotes');
+  document.getElementById('btn-cancel-item').textContent = t('btnCancel');
+  document.getElementById('btn-save-item').textContent = t('btnSave');
+  document.getElementById('btn-delete-item').textContent = t('btnDelete');
+
   if (item) {
     form.name.value = item.name || '';
-    form.aliasMalay.value = item.aliasMalay || '';
+    form.alias.value = currentLang === 'my' && item.aliasBurmese ? item.aliasBurmese : (item.aliasEnglish || item.aliasMalay || '');
     form.section.value = item.section || 'DIY';
-    form.category.value = item.category || '';
-    form.shelfLocation.value = item.shelfLocation || '';
+    form.category.value = currentLang === 'my' && item.categoryBurmese ? item.categoryBurmese : (item.category || '');
+    form.shelfLocation.value = currentLang === 'my' && item.shelfLocationBurmese ? item.shelfLocationBurmese : (item.shelfLocation || '');
     form.price.value = item.price || '';
     form.expiryDate.value = item.expiryDate || '';
     form.stockStatus.value = item.stockStatus || 'in_stock';
     form.priceTagChecked.checked = item.priceTagChecked ?? true;
-    form.notes.value = item.notes || '';
+    form.notes.value = currentLang === 'my' && item.notesBurmese ? item.notesBurmese : (item.notes || '');
     form.imageUrl.value = item.image || '';
     updateImagePreview(item.image);
     document.getElementById('btn-delete-item').classList.remove('hidden');
@@ -909,7 +1071,6 @@ function populateItemForm(item) {
 }
 
 function updateImagePreview(src) {
-  const preview = document.getElementById('image-preview-container');
   const imgEl = document.getElementById('image-preview-img');
   const placeholder = document.getElementById('image-preview-placeholder');
 
@@ -947,6 +1108,13 @@ function openReportModal() {
 
 // Setup Event Listeners
 function setupEventListeners() {
+  // Language Switch Pill in Header
+  const langToggleBtn = document.getElementById('btn-toggle-lang');
+  langToggleBtn?.addEventListener('click', () => {
+    const nextLang = currentLang === 'en' ? 'my' : 'en';
+    setLanguage(nextLang);
+  });
+
   // Search input with instant feedback
   const searchInput = document.getElementById('search-input');
   const clearSearchBtn = document.getElementById('btn-clear-search');
@@ -967,7 +1135,6 @@ function setupEventListeners() {
   // Sort Selector
   const sortSelect = document.getElementById('sort-select');
   if (sortSelect) {
-    sortSelect.value = sortBy;
     sortSelect.addEventListener('change', (e) => {
       sortBy = e.target.value;
       renderApp();
@@ -981,7 +1148,7 @@ function setupEventListeners() {
 
   // Reset Daily Check confirmation
   document.getElementById('btn-reset-daily')?.addEventListener('click', () => {
-    if (confirm('Mulakan semakan baru? Ini akan menetapkan semula status "Telah Semak" untuk semua barang.')) {
+    if (confirm(t('confirmResetShift'))) {
       resetDailyCheck();
     }
   });
@@ -994,13 +1161,16 @@ function setupEventListeners() {
 
     const name = formData.get('name')?.toString().trim();
     if (!name) {
-      alert('Sila masukkan nama barangan!');
+      alert(currentLang === 'my' ? 'ပစ္စည်းအမည် ထည့်သွင်းပေးပါ!' : 'Please enter item name!');
       return;
     }
 
+    const aliasVal = formData.get('alias')?.toString().trim() || '';
+
     const newItemData = {
       name,
-      aliasMalay: formData.get('aliasMalay')?.toString().trim() || '',
+      aliasBurmese: currentLang === 'my' ? aliasVal : '',
+      aliasEnglish: currentLang === 'en' ? aliasVal : '',
       section: formData.get('section')?.toString() || 'DIY',
       category: formData.get('category')?.toString().trim() || 'General',
       shelfLocation: formData.get('shelfLocation')?.toString().trim() || 'Unassigned',
@@ -1018,8 +1188,13 @@ function setupEventListeners() {
       // Update existing
       const idx = items.findIndex(i => i.id === editingItemId);
       if (idx !== -1) {
-        items[idx] = { ...items[idx], ...newItemData };
-        showToast(`Disimpan: ${newItemData.name}`, 'success');
+        items[idx] = { 
+          ...items[idx], 
+          ...newItemData,
+          aliasBurmese: currentLang === 'my' ? aliasVal : (items[idx].aliasBurmese || ''),
+          aliasEnglish: currentLang === 'en' ? aliasVal : (items[idx].aliasEnglish || '')
+        };
+        showToast(t('toastItemSaved'), 'success');
       }
     } else {
       // Create new
@@ -1029,7 +1204,7 @@ function setupEventListeners() {
         ...newItemData,
         stockQty: newItemData.stockStatus === 'in_stock' ? 10 : (newItemData.stockStatus === 'low_stock' ? 2 : 0)
       });
-      showToast(`Barangan baru ditambah!`, 'success');
+      showToast(t('toastItemSaved'), 'success');
     }
 
     saveData();
@@ -1043,12 +1218,12 @@ function setupEventListeners() {
     const it = items.find(i => i.id === editingItemId);
     if (!it) return;
 
-    if (confirm(`Padam barangan "${it.name}" dari sistem?`)) {
+    if (confirm(t('confirmDelete'))) {
       items = items.filter(i => i.id !== editingItemId);
       saveData();
       closeAllModals();
       renderApp();
-      showToast(`Barangan telah dipadam`, 'info');
+      showToast(t('toastItemDeleted'), 'info');
     }
   });
 
@@ -1064,7 +1239,7 @@ function setupEventListeners() {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 2 * 1024 * 1024) {
-        alert('Saiz gambar terlalu besar (maksimum 2MB)!');
+        alert(currentLang === 'my' ? 'ဖိုင်ဆိုဒ် 2MB ထက် ကြီးနေပါသည်!' : 'Image file too large (max 2MB)!');
         return;
       }
       const reader = new FileReader();
@@ -1091,7 +1266,7 @@ function setupEventListeners() {
 
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(text).then(() => {
-        showToast('📋 Laporan disalin ke papan keratan (Clipboard)!', 'success');
+        showToast(t('toastReportCopied'), 'success');
       }).catch(() => fallbackCopy(text));
     } else {
       fallbackCopy(text);
@@ -1103,7 +1278,7 @@ function setupEventListeners() {
     ta.focus();
     ta.select();
     document.execCommand('copy');
-    showToast('📋 Laporan disalin!', 'success');
+    showToast(t('toastReportCopied'), 'success');
   }
 
   // Direct WhatsApp Button (opens WhatsApp with prefilled message)
@@ -1126,11 +1301,11 @@ function setupEventListeners() {
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(items, null, 2));
     const downloadAnchor = document.createElement('a');
     downloadAnchor.setAttribute("href", dataStr);
-    downloadAnchor.setAttribute("download", `runcitcheck-backup-${new Date().toISOString().split('T')[0]}.json`);
+    downloadAnchor.setAttribute("download", `stock-ranger-backup-${new Date().toISOString().split('T')[0]}.json`);
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();
     downloadAnchor.remove();
-    showToast('Fail sandaran JSON berjaya dimuat turun!', 'success');
+    showToast(t('toastBackupSuccess'), 'success');
   });
 
   // Import JSON file
@@ -1144,18 +1319,18 @@ function setupEventListeners() {
       try {
         const parsed = JSON.parse(event.target.result);
         if (Array.isArray(parsed)) {
-          if (confirm(`Muat naik ${parsed.length} barangan daripada fail sandaran ini? Data sedia ada akan digantikan.`)) {
+          if (confirm(t('confirmRestore'))) {
             items = parsed;
             saveData();
             closeAllModals();
             renderApp();
-            showToast('Data sandaran berjaya dipulihkan!', 'success');
+            showToast(t('toastRestoreSuccess'), 'success');
           }
         } else {
-          alert('Format fail JSON tidak sah!');
+          alert('Invalid JSON file format!');
         }
       } catch (err) {
-        alert('Gagal membaca fail JSON: ' + err.message);
+        alert('Failed to read JSON: ' + err.message);
       }
     };
     reader.readAsText(file);
@@ -1163,12 +1338,12 @@ function setupEventListeners() {
 
   // Reset to default sample data button
   document.getElementById('btn-reset-sample-data')?.addEventListener('click', () => {
-    if (confirm('Kembalikan ke data asal barangan Mini-Mart Malaysia?')) {
+    if (confirm(t('confirmResetSample'))) {
       items = getInitialItems();
       saveData();
       closeAllModals();
       renderApp();
-      showToast('Data asal Mini-Mart telah dipulihkan!', 'success');
+      showToast(currentLang === 'my' ? 'နမူနာဒေတာများကို ပြန်လည်ရယူပြီးပါပြီ!' : 'Sample data has been restored!', 'success');
     }
   });
 
@@ -1176,13 +1351,18 @@ function setupEventListeners() {
   const soundToggleBtn = document.getElementById('btn-toggle-sound');
   soundToggleBtn?.addEventListener('click', () => {
     soundEnabled = !soundEnabled;
-    soundToggleBtn.textContent = soundEnabled ? '🔊 Bunyi: HIDUP' : '🔇 Bunyi: SENYAP';
-    showToast(soundEnabled ? 'Bunyi diaktifkan' : 'Bunyi disenyapkan', 'info');
+    soundToggleBtn.textContent = soundEnabled ? t('soundOn') : t('soundOff');
+    showToast(soundEnabled ? 'Audio ON' : 'Audio OFF', 'info');
   });
+
+  // Language buttons in Settings Modal
+  document.getElementById('btn-lang-en')?.addEventListener('click', () => setLanguage('en'));
+  document.getElementById('btn-lang-my')?.addEventListener('click', () => setLanguage('my'));
 }
 
 // Main Render Function
 export function renderApp() {
+  updateStaticTexts();
   renderSummary();
   renderSectionTabs();
   renderFilterChips();
