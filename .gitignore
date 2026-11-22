@@ -1,0 +1,9 @@
+# Operating System Files
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Temporary & Log Files
+*.log
+.temp/
+test_fetch.js

@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="ms" class="h-full bg-slate-100">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>RuncitCheck - DIY & Medicine Stock Ranger</title>
+  <meta name="description" content="Aplikasi mudah alih pantas untuk semakan stok dan harga barangan DIY & Farmasi mini-mart">
+  <meta name="theme-color" content="#0f172a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#ecfdf5',
+              100: '#d1fae5',
+              500: '#10b981',
+              600: '#059669',
+              700: '#047857',
+              800: '#065f46',
+              900: '#064e3b',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="h-full text-slate-800 antialiased selection:bg-emerald-500 selection:text-white pb-safe">
+
+  <!-- Main Mobile App Shell (Optimized for 390px - 440px phone viewports) -->
+  <div class="max-w-md mx-auto min-h-screen bg-slate-100 flex flex-col shadow-2xl relative">
+
+    <!-- TOP STICKY HEADER -->
+    <header class="sticky top-0 z-30 bg-slate-900/95 backdrop-blur-md text-white border-b border-slate-800 px-4 py-3 pt-safe">
+      <div class="flex items-center justify-between gap-3">
+        <!-- Logo & Store Branding -->
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-400 flex items-center justify-center text-white font-black text-lg shadow-md shadow-emerald-950/40">
+            RC
+          </div>
+          <div>
+            <div class="flex items-center gap-1.5">
+              <h1 class="text-sm font-black tracking-tight text-white leading-none">RuncitCheck</h1>
+              <span class="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">MY</span>
+            </div>
+            <p class="text-[11px] font-medium text-slate-400 mt-0.5">Mini Mart Maju • DIY & Farmasi</p>
+          </div>
+        </div>
+
+        <!-- Quick Top Actions: Reset Shift, Add Item, Settings -->
+        <div class="flex items-center gap-1">
+          <!-- Reset Daily Check -->
+          <button id="btn-reset-daily" title="Reset Semakan Harian" class="active-press p-2 text-slate-300 hover:text-white hover:bg-slate-800 rounded-xl transition-colors">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+          </button>
+
+          <!-- Settings & Backup -->
+          <button id="btn-open-settings" title="Sandaran Data & Tetapan" class="active-press p-2 text-slate-300 hover:text-white hover:bg-slate-800 rounded-xl transition-colors">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+          </button>
+
+          <!-- Add Item -->
+          <button id="btn-add-item" class="active-press ml-1 inline-flex items-center gap-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-3 py-2 rounded-xl shadow-md transition-colors">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+            <span>Tambah</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- MAIN SCROLLABLE CONTENT -->
+    <main class="flex-1 px-3.5 py-3 space-y-3 pb-24">
+
+      <!-- 1. DAILY SUMMARY & PROGRESS HEADER (Requirement 5) -->
+      <section id="daily-summary-container" aria-label="Daily Check Summary"></section>
+
+      <!-- 2. SECTION TABS (Requirement 1: All, DIY, Medicine) -->
+      <section class="bg-slate-200/80 p-1 rounded-2xl flex items-center gap-1 shadow-inner" id="section-tabs-container" aria-label="Section Tabs">
+        <!-- Rendered by JS -->
+      </section>
+
+      <!-- 3. INSTANT SEARCH BAR & SORTING (Requirement 1) -->
+      <section class="space-y-2">
+        <div class="relative flex items-center">
+          <span class="absolute left-3.5 text-slate-400 pointer-events-none">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+          </span>
+          <input 
+            type="search" 
+            id="search-input" 
+            placeholder="Cari nama, alias Malay, rak (cth: Rak D, Panadol)..." 
+            class="w-full bg-white text-slate-900 placeholder-slate-400 text-xs font-semibold rounded-2xl pl-10 pr-9 py-3 border border-slate-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all"
+            autocomplete="off"
+            spellcheck="false"
+          />
+          <button id="btn-clear-search" class="hidden absolute right-3 text-slate-400 hover:text-slate-600 p-1">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+        </div>
+
+        <!-- Filter Chips & Sorting Row -->
+        <div class="flex items-center justify-between gap-2">
+          <!-- Scrollable horizontal filter chips -->
+          <div id="filter-chips-container" class="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1 flex-1">
+            <!-- Rendered by JS -->
+          </div>
+
+          <!-- Sort Selector Dropdown -->
+          <div class="flex-shrink-0">
+            <select id="sort-select" class="bg-white text-slate-700 text-xs font-bold rounded-xl px-2.5 py-1.5 border border-slate-200 shadow-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/40">
+              <option value="default">Susunan Asal</option>
+              <option value="location">📍 Ikut Lokasi Rak</option>
+              <option value="expiry">⏳ Tarikh Luput</option>
+              <option value="status">⚠️ Status Stok</option>
+              <option value="name">A-Z Nama</option>
+            </select>
+          </div>
+        </div>
+      </section>
+
+      <!-- RESULTS COUNT HEADER -->
+      <div class="flex items-center justify-between px-1 text-[11px] font-bold text-slate-500">
+        <span id="search-result-count">Memuatkan barangan...</span>
+        <span class="text-slate-400">Tekan status untuk tukar pantas ↻</span>
+      </div>
+
+      <!-- 4. ITEM CARDS LIST (Requirement 2: One-handed mobile quick status check) -->
+      <section id="items-list-container" class="space-y-3" aria-label="Items List">
+        <!-- Rendered dynamically by app.js -->
+      </section>
+
+    </main>
+
+    <!-- FLOATING BOTTOM BAR FOR MOBILE WALKTHROUGH -->
+    <div class="fixed bottom-0 left-0 right-0 max-w-md mx-auto z-20 px-4 py-3 bg-white/95 backdrop-blur-md border-t border-slate-200/90 shadow-2xl flex items-center justify-between gap-2.5 pb-safe">
+      <button id="btn-quick-report" onclick="document.getElementById('btn-open-report')?.click()" class="active-press flex-1 inline-flex items-center justify-center gap-2 py-3 px-4 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white text-xs font-extrabold rounded-2xl shadow-lg shadow-emerald-950/20 transition-all">
+        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z"/></svg>
+        <span>Salin Laporan Boss</span>
+      </button>
+
+      <button id="btn-quick-add" onclick="document.getElementById('btn-add-item')?.click()" class="active-press p-3 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl shadow-md transition-colors flex items-center justify-center">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+      </button>
+    </div>
+
+  </div>
+
+  <!-- ==================== MODALS ==================== -->
+
+  <!-- 1. ADD / EDIT ITEM MODAL (Requirement 3) -->
+  <div id="item-form-modal" class="modal-overlay fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm hidden items-end sm:items-center justify-center transition-opacity">
+    <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden animate-in slide-in-from-bottom duration-200">
+      
+      <!-- Modal Header -->
+      <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/80">
+        <div>
+          <h2 id="form-modal-title" class="text-sm font-black text-slate-900">Tambah Barangan Baru</h2>
+          <p class="text-[11px] text-slate-500">Maklumat rak, harga, dan tarikh luput</p>
+        </div>
+        <button data-close-modal class="active-press w-8 h-8 rounded-full bg-slate-200 text-slate-600 hover:bg-slate-300 flex items-center justify-center text-sm font-bold">
+          ✕
+        </button>
+      </div>
+
+      <!-- Form Body (Scrollable) -->
+      <form id="item-form" class="overflow-y-auto px-5 py-4 space-y-4 flex-1 text-xs">
+        
+        <!-- Section Selector -->
+        <div>
+          <label class="block font-bold text-slate-700 mb-1.5">Bahagian / Seksyen *</label>
+          <div class="grid grid-cols-2 gap-2">
+            <label class="active-press flex items-center justify-center gap-2 p-2.5 rounded-xl border border-slate-200 cursor-pointer has-[:checked]:bg-amber-50 has-[:checked]:border-amber-500 has-[:checked]:text-amber-900 font-bold">
+              <input type="radio" name="section" value="DIY" class="sr-only" checked>
+              <span>🔧 Bahagian DIY</span>
+            </label>
+            <label class="active-press flex items-center justify-center gap-2 p-2.5 rounded-xl border border-slate-200 cursor-pointer has-[:checked]:bg-rose-50 has-[:checked]:border-rose-500 has-[:checked]:text-rose-900 font-bold">
+              <input type="radio" name="section" value="Medicine" class="sr-only">
+              <span>💊 Bahagian Farmasi</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Item Name (English / Official) -->
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Nama Rasmi Barangan *</label>
+          <input type="text" name="name" required placeholder="Cth: Panadol ActiFast 500mg, Mentol LED 12W" class="w-full p-2.5 rounded-xl border border-slate-200 font-semibold focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+        </div>
+
+        <!-- Malay / Local Alias -->
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Nama Panggilan / Alias Malay</label>
+          <input type="text" name="aliasMalay" placeholder="Cth: Panadol Merah, Gam Gajah 502" class="w-full p-2.5 rounded-xl border border-slate-200 font-semibold focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+        </div>
+
+        <!-- Category & Shelf Location Row -->
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Kategori</label>
+            <input type="text" name="category" list="category-presets" placeholder="Cth: Pain & Fever" class="w-full p-2.5 rounded-xl border border-slate-200 font-semibold focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+            <datalist id="category-presets">
+              <option value="Lighting & Electrical">
+              <option value="Hardware & Tools">
+              <option value="Adhesives & Tapes">
+              <option value="Plumbing & Sanitary">
+              <option value="Pain, Fever & Headache">
+              <option value="Cough & Throat Care">
+              <option value="Medicated Oils & Balm">
+              <option value="Digestive & Stomach Care">
+              <option value="Muscle Relief & Balm">
+              <option value="First Aid & Bandages">
+            </datalist>
+          </div>
+
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Lokasi Rak (Shelf) *</label>
+            <input type="text" name="shelfLocation" required placeholder="Cth: Rack D - Tengah" class="w-full p-2.5 rounded-xl border border-slate-200 font-semibold focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+          </div>
+        </div>
+
+        <!-- Price (RM) & Expiry Date Row -->
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Harga (RM) *</label>
+            <div class="relative flex items-center">
+              <span class="absolute left-3 text-slate-400 font-bold">RM</span>
+              <input type="number" step="0.05" name="price" required placeholder="0.00" class="w-full pl-10 p-2.5 rounded-xl border border-slate-200 font-bold font-mono focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+            </div>
+          </div>
+
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Tarikh Luput (Expiry)</label>
+            <input type="date" name="expiryDate" class="w-full p-2.5 rounded-xl border border-slate-200 font-semibold focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+          </div>
+        </div>
+
+        <!-- Stock Status Radio Selector -->
+        <div>
+          <label class="block font-bold text-slate-700 mb-1.5">Status Stok Semasa</label>
+          <div class="grid grid-cols-3 gap-2">
+            <label class="active-press flex flex-col items-center justify-center p-2 rounded-xl border border-slate-200 cursor-pointer has-[:checked]:bg-emerald-50 has-[:checked]:border-emerald-500 has-[:checked]:text-emerald-900 text-center">
+              <input type="radio" name="stockStatus" value="in_stock" class="sr-only" checked>
+              <span class="text-base">🟢</span>
+              <span class="font-bold text-[11px] mt-0.5">Ada Stok</span>
+            </label>
+            <label class="active-press flex flex-col items-center justify-center p-2 rounded-xl border border-slate-200 cursor-pointer has-[:checked]:bg-amber-50 has-[:checked]:border-amber-500 has-[:checked]:text-amber-900 text-center">
+              <input type="radio" name="stockStatus" value="low_stock" class="sr-only">
+              <span class="text-base">🟡</span>
+              <span class="font-bold text-[11px] mt-0.5">Rendah</span>
+            </label>
+            <label class="active-press flex flex-col items-center justify-center p-2 rounded-xl border border-slate-200 cursor-pointer has-[:checked]:bg-red-50 has-[:checked]:border-red-500 has-[:checked]:text-red-900 text-center">
+              <input type="radio" name="stockStatus" value="out_of_stock" class="sr-only">
+              <span class="text-base">🔴</span>
+              <span class="font-bold text-[11px] mt-0.5">Habis</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Price Tag Checked Checkbox -->
+        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 flex items-center justify-between">
+          <div>
+            <div class="font-bold text-slate-900 flex items-center gap-1.5">
+              <span>🏷️</span>
+              <span>Tanda Harga di Rak Lengkap</span>
+            </div>
+            <p class="text-[10px] text-slate-500">Nyah-tanda jika label tanda harga hilang atau perlu diprint baru</p>
+          </div>
+          <input type="checkbox" name="priceTagChecked" id="priceTagChecked" class="w-5 h-5 text-emerald-600 rounded focus:ring-emerald-500 border-slate-300">
+        </div>
+
+        <!-- Photo Reference Upload & Preview (Requirement 3) -->
+        <div class="space-y-2">
+          <label class="block font-bold text-slate-700">Gambar Rujukan (Photo Reference)</label>
+          <div class="flex items-start gap-3">
+            <div id="image-preview-container" class="w-20 h-20 rounded-xl bg-slate-100 border border-dashed border-slate-300 flex items-center justify-center overflow-hidden flex-shrink-0 relative">
+              <span id="image-preview-placeholder" class="text-2xl text-slate-400">📷</span>
+              <img id="image-preview-img" class="w-full h-full object-cover hidden" alt="Pratonton">
+            </div>
+
+            <div class="flex-1 space-y-2">
+              <input type="url" name="imageUrl" id="image-url-input" placeholder="Tampal URL gambar (https://...)" class="w-full p-2 rounded-lg border border-slate-200 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+              
+              <div class="flex items-center gap-2">
+                <label class="active-press cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 rounded-lg text-xs font-semibold">
+                  <span>📁 Pilih Gambar Fail</span>
+                  <input type="file" id="image-file-input" accept="image/*" class="sr-only">
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Notes -->
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Nota Tambahan / Maklumat Pembekal</label>
+          <textarea name="notes" rows="2" placeholder="Cth: Supplier Jaya Wholesale, perlu order 2 karton." class="w-full p-2.5 rounded-xl border border-slate-200 font-medium focus:ring-2 focus:ring-emerald-500 focus:outline-none"></textarea>
+        </div>
+
+        <!-- Form Actions -->
+        <div class="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+          <button type="button" id="btn-delete-item" class="active-press px-4 py-2.5 bg-rose-50 text-rose-700 hover:bg-rose-100 font-bold rounded-xl hidden">
+            Padam
+          </button>
+          
+          <div class="flex items-center gap-2 ml-auto">
+            <button type="button" data-close-modal class="active-press px-4 py-2.5 text-slate-600 hover:bg-slate-100 font-bold rounded-xl">
+              Batal
+            </button>
+            <button type="submit" class="active-press px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-extrabold rounded-xl shadow-md">
+              Simpan Barangan
+            </button>
+          </div>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+  <!-- 2. WHATSAPP REPORT MODAL (Requirement 5) -->
+  <div id="report-modal" class="modal-overlay fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-sm hidden items-end sm:items-center justify-center p-3">
+    <div class="bg-white w-full max-w-md rounded-3xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-in slide-in-from-bottom duration-200">
+      
+      <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between bg-emerald-950 text-white">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-lg">
+            📱
+          </div>
+          <div>
+            <h2 class="text-sm font-black text-white">Laporan WhatsApp untuk Boss</h2>
+            <p class="text-[11px] text-emerald-300">Format kemas, siap disalin & dihantar</p>
+          </div>
+        </div>
+        <button data-close-modal class="active-press w-7 h-7 rounded-full bg-emerald-900/80 text-emerald-200 hover:bg-emerald-800 flex items-center justify-center text-sm font-bold">
+          ✕
+        </button>
+      </div>
+
+      <div class="p-4 flex-1 overflow-y-auto space-y-3">
+        <p class="text-xs text-slate-500">
+          Senarai di bawah memaparkan barang yang habis stok, hampir tamat tempoh, serta tanda harga yang hilang:
+        </p>
+
+        <textarea id="report-text-content" readonly rows="12" class="w-full bg-slate-50 text-slate-800 p-3 rounded-2xl border border-slate-200 text-xs font-mono leading-relaxed focus:outline-none selectable-text"></textarea>
+      </div>
+
+      <div class="p-4 border-t border-slate-100 bg-slate-50 flex items-center gap-2">
+        <button id="btn-copy-report" class="active-press flex-1 py-3 px-4 bg-slate-900 hover:bg-slate-800 text-white text-xs font-black rounded-xl shadow flex items-center justify-center gap-2">
+          <span>📋 Salin Teks (Copy)</span>
+        </button>
+        <button id="btn-share-whatsapp" class="active-press flex-1 py-3 px-4 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black rounded-xl shadow flex items-center justify-center gap-2">
+          <span>🚀 Buka WhatsApp</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. PHOTO ZOOM MODAL -->
+  <div id="photo-modal" class="modal-overlay fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md hidden items-center justify-center p-3">
+    <div id="photo-modal-content" class="w-full max-w-sm flex justify-center">
+      <!-- Rendered dynamically -->
+    </div>
+  </div>
+
+  <!-- 4. SETTINGS & BACKUP MODAL (Requirement 6) -->
+  <div id="settings-modal" class="modal-overlay fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-sm hidden items-end sm:items-center justify-center p-3">
+    <div class="bg-white w-full max-w-md rounded-3xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-in slide-in-from-bottom duration-200">
+      
+      <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-900 text-white">
+        <div class="flex items-center gap-2">
+          <span class="text-lg">⚙️</span>
+          <div>
+            <h2 class="text-sm font-black">Tetapan & Sandaran Data</h2>
+            <p class="text-[11px] text-slate-400">Pengurusan localStorage & sandaran JSON</p>
+          </div>
+        </div>
+        <button data-close-modal class="active-press w-7 h-7 rounded-full bg-slate-800 text-slate-300 hover:bg-slate-700 flex items-center justify-center text-sm font-bold">
+          ✕
+        </button>
+      </div>
+
+      <div class="p-5 space-y-4 overflow-y-auto text-xs">
+        <!-- Sound Toggle -->
+        <div class="flex items-center justify-between p-3 rounded-2xl bg-slate-50 border border-slate-200">
+          <div>
+            <span class="font-bold text-slate-900 block">Kesan Bunyi (Audio FX)</span>
+            <span class="text-slate-500 text-[11px]">Bunyi klik interaktif semasa semak rak</span>
+          </div>
+          <button id="btn-toggle-sound" class="active-press px-3 py-1.5 bg-slate-200 hover:bg-slate-300 rounded-xl font-bold text-slate-800 text-xs">
+            🔊 Bunyi: HIDUP
+          </button>
+        </div>
+
+        <!-- JSON Backup & Restore -->
+        <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+          <span class="font-bold text-slate-900 block text-xs">Sandaran Data Tempatan (Backup & Restore)</span>
+          <p class="text-[11px] text-slate-500">
+            Simpan sandaran inventori anda ke fail fail JSON atau pulihkan bila-bila masa pada peranti lain.
+          </p>
+
+          <div class="grid grid-cols-2 gap-2">
+            <button id="btn-export-json" class="active-press py-2.5 px-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold shadow text-center flex items-center justify-center gap-1.5">
+              <span>⬇️ Muat Turun JSON</span>
+            </button>
+            <label class="active-press cursor-pointer py-2.5 px-3 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-bold shadow text-center flex items-center justify-center gap-1.5">
+              <span>⬆️ Pulihkan JSON</span>
+              <input type="file" id="import-file-input" accept=".json,application/json" class="sr-only">
+            </label>
+          </div>
+        </div>
+
+        <!-- Reset to default sample data -->
+        <div class="p-4 rounded-2xl bg-rose-50 border border-rose-200 space-y-2">
+          <span class="font-bold text-rose-900 block text-xs">Reset ke Data Asal Mini-Mart</span>
+          <p class="text-[11px] text-rose-700">
+            Muat semula sampel data barangan Malaysia (Panadol, Strepsils, Cap Kapak, Mentol, Plug, dsb).
+          </p>
+          <button id="btn-reset-sample-data" class="active-press w-full py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-xl font-bold shadow text-xs">
+            Muat Semula Data Contoh Asal
+          </button>
+        </div>
+      </div>
+
+      <div class="p-4 border-t border-slate-100 bg-slate-50 flex justify-end">
+        <button data-close-modal class="active-press px-5 py-2 bg-slate-200 text-slate-800 font-bold rounded-xl text-xs">
+          Tutup
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION CONTAINER -->
+  <div id="toast-container" class="fixed top-4 left-0 right-0 z-50 px-4 space-y-2 flex flex-col items-center"></div>
+
+  <!-- Main Application Script -->
+  <script type="module" src="app.js"></script>
+</body>
+</html>
