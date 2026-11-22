@@ -9,7 +9,7 @@ async function sleep(ms) {
 async function runTest() {
   console.log('Starting Chrome with debugging port 9222...');
   const chromePath = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
-  const userDataDir = path.join(process.env.TEMP, 'chrome_cdp_profile_i18n_' + Date.now());
+  const userDataDir = path.join(process.env.TEMP, 'chrome_cdp_profile_sec_' + Date.now());
 
   const chromeProc = spawn(chromePath, [
     '--headless=new',
@@ -88,56 +88,51 @@ async function runTest() {
 
     await sleep(1500);
 
-    // 1. Capture English Home Screenshot
-    console.log('Capturing English Home View...');
-    const enHomeShot = await sendCommand('Page.captureScreenshot', { format: 'png' });
-    fs.writeFileSync('mobile_en_home.png', Buffer.from(enHomeShot.data, 'base64'));
+    // 1. Capture Multi-section Home Screen
+    console.log('Capturing Multi-section Home View (DIY, Med, Groceries, Snacks)...');
+    const homeShot = await sendCommand('Page.captureScreenshot', { format: 'png' });
+    fs.writeFileSync('mobile_multi_sections.png', Buffer.from(homeShot.data, 'base64'));
 
-    // 2. Switch to Burmese
-    console.log('Switching to Burmese (မြန်မာစာ)...');
+    // 2. Open Section Manager Modal
+    console.log('Opening Section Manager Modal...');
     await sendCommand('Runtime.evaluate', {
       expression: `
-        document.getElementById('btn-toggle-lang').click();
+        document.getElementById('btn-open-add-section-tab').click();
       `
-    });
-    await sleep(1000);
-
-    // Capture Burmese Home Screenshot
-    console.log('Capturing Burmese Home View...');
-    const myHomeShot = await sendCommand('Page.captureScreenshot', { format: 'png' });
-    fs.writeFileSync('mobile_burmese_home.png', Buffer.from(myHomeShot.data, 'base64'));
-
-    // 3. Test Burmese WhatsApp Report Modal
-    console.log('Opening Burmese WhatsApp Report Modal...');
-    await sendCommand('Runtime.evaluate', {
-      expression: `document.getElementById('btn-quick-report').click();`
     });
     await sleep(800);
 
-    const reportShot = await sendCommand('Page.captureScreenshot', { format: 'png' });
-    fs.writeFileSync('mobile_burmese_report.png', Buffer.from(reportShot.data, 'base64'));
+    const secShot = await sendCommand('Page.captureScreenshot', { format: 'png' });
+    fs.writeFileSync('mobile_section_manager.png', Buffer.from(secShot.data, 'base64'));
 
-    const reportText = await sendCommand('Runtime.evaluate', {
-      expression: `document.getElementById('report-text-content').value;`,
-      returnByValue: true
-    });
-    console.log('Generated Burmese WhatsApp Report:\n' + reportText.result?.value);
-
-    // Close report modal
+    // 3. Create a new custom section: "Stationery" / "စာရေးကိရိယာ", icon: "✏️"
+    console.log('Creating new custom section: Stationery / စာရေးကိရိယာ...');
     await sendCommand('Runtime.evaluate', {
-      expression: `document.querySelector('#report-modal [data-close-modal]').click();`
+      expression: `
+        document.getElementById('input-sec-name-en').value = 'Stationery';
+        document.getElementById('input-sec-name-my').value = 'စာရေးကိရိယာ';
+        document.getElementById('input-sec-icon').value = '✏️';
+        document.getElementById('input-sec-color').value = 'indigo';
+        document.getElementById('new-section-form').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+      `
+    });
+    await sleep(600);
+
+    // Close section manager modal
+    await sendCommand('Runtime.evaluate', {
+      expression: `document.querySelector('#section-manager-modal [data-close-modal]').click();`
     });
     await sleep(500);
 
-    // 4. Test Burmese Add Modal
-    console.log('Opening Burmese Add Item Modal...');
+    // 4. Open Add Item Modal and verify new section is in the options
+    console.log('Opening Add Item Modal to check dynamic section selector...');
     await sendCommand('Runtime.evaluate', {
       expression: `document.getElementById('btn-add-item').click();`
     });
     await sleep(800);
 
     const addShot = await sendCommand('Page.captureScreenshot', { format: 'png' });
-    fs.writeFileSync('mobile_burmese_add.png', Buffer.from(addShot.data, 'base64'));
+    fs.writeFileSync('mobile_add_with_sections.png', Buffer.from(addShot.data, 'base64'));
 
     // Close add modal
     await sendCommand('Runtime.evaluate', {
@@ -145,22 +140,21 @@ async function runTest() {
     });
     await sleep(500);
 
-    // 5. Test search in Burmese: search for "ပါရာစီတမော"
-    console.log('Testing search for "ပါရာစီတမော" (Panadol in Burmese)...');
+    // 5. Test switching to Groceries tab
+    console.log('Testing Groceries tab filter...');
     await sendCommand('Runtime.evaluate', {
       expression: `
-        const input = document.getElementById('search-input');
-        input.value = 'ပါရာစီတမော';
-        input.dispatchEvent(new Event('input', { bubbles: true }));
+        const grocTab = document.querySelector('[data-section-id="Groceries"]');
+        if (grocTab) grocTab.click();
       `
     });
     await sleep(800);
 
-    const searchShot = await sendCommand('Page.captureScreenshot', { format: 'png' });
-    fs.writeFileSync('mobile_burmese_search.png', Buffer.from(searchShot.data, 'base64'));
+    const grocShot = await sendCommand('Page.captureScreenshot', { format: 'png' });
+    fs.writeFileSync('mobile_groceries_tab.png', Buffer.from(grocShot.data, 'base64'));
 
     ws.close();
-    console.log('All English & Burmese mobile tests completed successfully!');
+    console.log('Multi-category testing completed successfully!');
   } finally {
     chromeProc.kill('SIGKILL');
   }

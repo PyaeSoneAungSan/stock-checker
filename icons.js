@@ -21,7 +21,6 @@ export const productIllustrations = {
     <svg viewBox="0 0 100 100" class="w-full h-full p-2" xmlns="http://www.w3.org/2000/svg">
       <rect x="25" y="30" width="50" height="48" rx="10" fill="#334155"/>
       <rect x="27" y="32" width="46" height="44" rx="8" fill="#1e293b"/>
-      <!-- UK/MY 3 pins -->
       <rect x="46" y="12" width="8" height="20" rx="2" fill="#eab308"/>
       <rect x="30" y="44" width="12" height="6" rx="1.5" fill="#ca8a04"/>
       <rect x="58" y="44" width="12" height="6" rx="1.5" fill="#ca8a04"/>
@@ -64,7 +63,6 @@ export const productIllustrations = {
       <rect x="18" y="44" width="28" height="14" rx="3" fill="#0284c7"/>
       <rect x="42" y="38" width="16" height="36" rx="4" fill="#0369a1"/>
       <path d="M46 54 Q65 54 68 68 L68 76 L58 76 L58 68 Q56 62 46 62 Z" fill="#0284c7"/>
-      <!-- tap handle -->
       <rect x="45" y="24" width="10" height="14" fill="#38bdf8"/>
       <rect x="30" y="20" width="40" height="8" rx="4" fill="#ef4444"/>
       <circle cx="50" cy="24" r="3" fill="#ffffff"/>
@@ -85,7 +83,6 @@ export const productIllustrations = {
   pill: `
     <svg viewBox="0 0 100 100" class="w-full h-full p-2" xmlns="http://www.w3.org/2000/svg">
       <rect x="22" y="25" width="56" height="52" rx="8" fill="#e2e8f0" stroke="#94a3b8" stroke-width="2"/>
-      <!-- blisters -->
       <circle cx="36" cy="38" r="8" fill="#ef4444"/>
       <circle cx="64" cy="38" r="8" fill="#ef4444"/>
       <circle cx="36" cy="62" r="8" fill="#3b82f6"/>
@@ -97,7 +94,6 @@ export const productIllustrations = {
     <svg viewBox="0 0 100 100" class="w-full h-full p-2" xmlns="http://www.w3.org/2000/svg">
       <circle cx="50" cy="50" r="34" fill="#fbbf24" stroke="#d97706" stroke-width="4"/>
       <circle cx="50" cy="50" r="24" fill="#fef08a"/>
-      <!-- S mark -->
       <text x="50" y="58" font-size="28" fill="#b45309" font-weight="900" text-anchor="middle">S</text>
       <text x="50" y="92" font-size="7" fill="#78350f" font-weight="bold" text-anchor="middle">STREPSILS</text>
     </svg>
@@ -108,7 +104,6 @@ export const productIllustrations = {
       <rect x="45" y="24" width="10" height="6" fill="#86efac"/>
       <rect x="34" y="30" width="32" height="52" rx="8" fill="#047857"/>
       <rect x="38" y="42" width="24" height="30" fill="#ffffff" rx="3"/>
-      <!-- Axe silhouette -->
       <path d="M48 50 L52 50 L52 66 L48 66 Z" fill="#991b1b"/>
       <path d="M46 50 Q56 46 56 54 L48 54 Z" fill="#991b1b"/>
       <text x="50" y="70" font-size="5.5" fill="#166534" font-weight="900" text-anchor="middle">CAP KAPAK</text>
@@ -146,7 +141,6 @@ export const productIllustrations = {
     <svg viewBox="0 0 100 100" class="w-full h-full p-2" xmlns="http://www.w3.org/2000/svg">
       <rect x="22" y="38" width="56" height="24" rx="12" fill="#d4a373" stroke="#bc6c25" stroke-width="2"/>
       <rect x="40" y="39" width="20" height="22" fill="#fefae0"/>
-      <!-- ventilation holes -->
       <circle cx="28" cy="50" r="1.5" fill="#bc6c25"/>
       <circle cx="34" cy="46" r="1.5" fill="#bc6c25"/>
       <circle cx="34" cy="54" r="1.5" fill="#bc6c25"/>
@@ -156,17 +150,43 @@ export const productIllustrations = {
       <text x="50" y="53" font-size="5" fill="#8d99ae" font-weight="bold" text-anchor="middle">HANSAPLAST</text>
     </svg>
   `,
-  defaultDiy: `
+  noodle: `
     <svg viewBox="0 0 100 100" class="w-full h-full p-2" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="50" cy="50" r="36" fill="#e0f2fe"/>
-      <path d="M38 62 L62 38 M60 36 L64 40 M36 60 L40 64" stroke="#0284c7" stroke-width="6" stroke-linecap="round"/>
-      <circle cx="62" cy="38" r="4" fill="#0369a1"/>
+      <rect x="22" y="22" width="56" height="56" rx="8" fill="#facc15" stroke="#eab308" stroke-width="2"/>
+      <rect x="26" y="36" width="48" height="22" rx="4" fill="#dc2626"/>
+      <text x="50" y="51" font-size="10" fill="#ffffff" font-weight="900" text-anchor="middle">MAGGI</text>
+      <text x="50" y="70" font-size="7" fill="#854d0e" font-weight="bold" text-anchor="middle">2-MIN KARI</text>
     </svg>
   `,
-  defaultMed: `
+  drink: `
     <svg viewBox="0 0 100 100" class="w-full h-full p-2" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="50" cy="50" r="36" fill="#fce7f3"/>
-      <path d="M50 30 V70 M30 50 H70" stroke="#db2777" stroke-width="8" stroke-linecap="round"/>
+      <rect x="36" y="14" width="28" height="12" rx="2" fill="#0284c7"/>
+      <rect x="30" y="26" width="40" height="60" rx="8" fill="#38bdf8"/>
+      <rect x="33" y="38" width="34" height="34" rx="4" fill="#ffffff"/>
+      <text x="50" y="52" font-size="11" fill="#0284c7" font-weight="900" text-anchor="middle">100</text>
+      <text x="50" y="65" font-size="8" fill="#0369a1" font-weight="bold" text-anchor="middle">PLUS</text>
+    </svg>
+  `,
+  milo: `
+    <svg viewBox="0 0 100 100" class="w-full h-full p-2" xmlns="http://www.w3.org/2000/svg">
+      <rect x="24" y="20" width="52" height="62" rx="6" fill="#15803d" stroke="#166534" stroke-width="2"/>
+      <circle cx="50" cy="50" r="18" fill="#ca8a04"/>
+      <text x="50" y="55" font-size="11" fill="#ffffff" font-weight="900" text-anchor="middle">MILO</text>
+      <text x="50" y="74" font-size="6" fill="#86efac" font-weight="bold" text-anchor="middle">ACTIV-GO 1KG</text>
+    </svg>
+  `,
+  snack: `
+    <svg viewBox="0 0 100 100" class="w-full h-full p-2" xmlns="http://www.w3.org/2000/svg">
+      <rect x="22" y="22" width="56" height="56" rx="8" fill="#ea580c"/>
+      <circle cx="50" cy="46" r="14" fill="#facc15"/>
+      <text x="50" y="50" font-size="12" fill="#78350f" font-weight="900" text-anchor="middle">M</text>
+      <text x="50" y="70" font-size="7" fill="#ffffff" font-weight="bold" text-anchor="middle">MAMEE BBQ</text>
+    </svg>
+  `,
+  defaultItem: `
+    <svg viewBox="0 0 100 100" class="w-full h-full p-2" xmlns="http://www.w3.org/2000/svg">
+      <rect x="24" y="24" width="52" height="52" rx="8" fill="#e2e8f0" stroke="#94a3b8" stroke-width="2"/>
+      <path d="M35 50 H65 M50 35 V65" stroke="#64748b" stroke-width="4" stroke-linecap="round"/>
     </svg>
   `
 };
@@ -175,5 +195,5 @@ export function getProductSvg(svgKey, section) {
   if (svgKey && productIllustrations[svgKey]) {
     return productIllustrations[svgKey];
   }
-  return section === 'DIY' ? productIllustrations.defaultDiy : productIllustrations.defaultMed;
+  return productIllustrations.defaultItem;
 }

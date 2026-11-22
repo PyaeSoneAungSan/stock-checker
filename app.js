@@ -1,17 +1,19 @@
-import { getInitialItems } from './sample-data.js';
+import { getDefaultSections, getInitialItems } from './sample-data.js';
 import { getProductSvg } from './icons.js';
 import { translations } from './i18n.js';
 
 // Application State
-const STORAGE_KEY = 'runcitcheck_items_v3';
+const STORAGE_KEY = 'runcitcheck_items_v4';
+const SECTIONS_KEY = 'runcitcheck_sections_v2';
 const LANG_KEY = 'runcitcheck_lang_v1';
 
 let currentLang = localStorage.getItem(LANG_KEY) || 'en'; // 'en' | 'my'
+let sections = [];
 let items = [];
-let activeSection = 'ALL'; // 'ALL' | 'DIY' | 'Medicine'
+let activeSection = 'ALL'; // 'ALL' or specific section id
 let activeFilter = 'all'; // 'all' | 'low_or_out' | 'expiring' | 'missing_tag' | 'unchecked'
 let searchQuery = '';
-let sortBy = 'location'; // Default to rack location for walk-through aisle auditing
+let sortBy = 'location';
 let soundEnabled = true;
 
 // Translation helper
@@ -104,6 +106,19 @@ function formatRM(num) {
   return 'RM ' + Number(num || 0).toFixed(2);
 }
 
+// Get Section helper
+export function getSectionById(id) {
+  const found = sections.find(s => s.id === id);
+  if (found) return found;
+  return {
+    id: id || 'General',
+    nameEn: id || 'General',
+    nameMy: id || 'အထွေထွေ',
+    icon: '📦',
+    color: 'slate'
+  };
+}
+
 // Calculate days between today and expiry
 function getExpiryInfo(expiryDateStr) {
   if (!expiryDateStr) return { hasExpiry: false, daysLeft: 9999 };
@@ -159,8 +174,26 @@ function getExpiryInfo(expiryDateStr) {
   }
 }
 
-// Load items from localStorage
+// Load items & sections from localStorage
 function loadData() {
+  // 1. Load Sections
+  try {
+    const rawSec = localStorage.getItem(SECTIONS_KEY);
+    if (rawSec) {
+      const parsedSec = JSON.parse(rawSec);
+      if (Array.isArray(parsedSec) && parsedSec.length > 0) {
+        sections = parsedSec;
+      } else {
+        sections = getDefaultSections();
+      }
+    } else {
+      sections = getDefaultSections();
+    }
+  } catch (e) {
+    sections = getDefaultSections();
+  }
+
+  // 2. Load Items
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
@@ -178,10 +211,11 @@ function loadData() {
   saveData();
 }
 
-// Save items to localStorage
+// Save items & sections to localStorage
 function saveData() {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+    localStorage.setItem(SECTIONS_KEY, JSON.stringify(sections));
   } catch (err) {
     console.error('Failed to save to localStorage:', err);
     showToast(currentLang === 'my' ? 'ဒေတာ သိမ်းဆည်းရန် မအောင်မြင်ပါ!' : 'Failed to save data!', 'error');
@@ -314,6 +348,48 @@ export function resetDailyCheck() {
   showToast(t('toastResetShift'), 'info');
 }
 
+// Add New Section
+export function createNewSection(nameEn, nameMy, icon = '📦', color = 'emerald') {
+  if (!nameEn && !nameMy) return;
+  const newId = 'sec_' + Date.now().toString(36);
+  const newSec = {
+    id: newId,
+    nameEn: nameEn || nameMy,
+    nameMy: nameMy || nameEn,
+    icon: icon || '📦',
+    color: color || 'emerald'
+  };
+  sections.push(newSec);
+  saveData();
+  renderApp();
+  showToast(t('toastSectionCreated'), 'success');
+  return newSec;
+}
+
+// Delete Section
+export function deleteSection(secId) {
+  if (sections.length <= 1) {
+    alert(currentLang === 'my' ? 'အနည်းဆုံး ကဏ္ဍ ၁ ခု ရှိရပါမည်!' : 'At least one section is required!');
+    return;
+  }
+  if (confirm(t('confirmDeleteSection'))) {
+    const fallbackSec = sections.find(s => s.id !== secId)?.id || 'General';
+    // Reassign items in this section to fallback
+    items.forEach(it => {
+      if (it.section === secId) {
+        it.section = fallbackSec;
+      }
+    });
+    sections = sections.filter(s => s.id !== secId);
+    if (activeSection === secId) {
+      activeSection = 'ALL';
+    }
+    saveData();
+    renderApp();
+    showToast(t('toastSectionDeleted'), 'info');
+  }
+}
+
 // Filter and Sort Items
 function getFilteredItems() {
   return items.filter(item => {
@@ -423,9 +499,11 @@ export function generateWhatsAppReport() {
     text += `  ${t('waNoOutOfStock')}\n`;
   } else {
     outOfStockList.forEach((it, idx) => {
+      const sec = getSectionById(it.section);
+      const secLabel = currentLang === 'my' ? sec.nameMy : sec.nameEn;
       const alias = currentLang === 'my' && it.aliasBurmese ? it.aliasBurmese : (it.aliasEnglish || it.aliasMalay || '');
       const shelf = currentLang === 'my' && it.shelfLocationBurmese ? it.shelfLocationBurmese : it.shelfLocation;
-      text += `  ${idx + 1}. *${it.name}*${alias ? ` (${alias})` : ''}\n`;
+      text += `  ${idx + 1}. *${it.name}* [${sec.icon} ${secLabel}]${alias ? ` (${alias})` : ''}\n`;
       text += `     📍 ${shelf} | ${formatRM(it.price)}\n`;
     });
   }
@@ -437,9 +515,11 @@ export function generateWhatsAppReport() {
     text += `  ${t('waNoLowStock')}\n`;
   } else {
     lowStockList.forEach((it, idx) => {
+      const sec = getSectionById(it.section);
+      const secLabel = currentLang === 'my' ? sec.nameMy : sec.nameEn;
       const shelf = currentLang === 'my' && it.shelfLocationBurmese ? it.shelfLocationBurmese : it.shelfLocation;
       const qtyLabel = currentLang === 'my' ? `လက်ကျန်: ${it.stockQty || 'နည်း'}` : `Qty: ${it.stockQty || 'Low'}`;
-      text += `  ${idx + 1}. *${it.name}* (${qtyLabel})\n`;
+      text += `  ${idx + 1}. *${it.name}* [${sec.icon} ${secLabel}] (${qtyLabel})\n`;
       text += `     📍 ${shelf}\n`;
     });
   }
@@ -484,7 +564,6 @@ export function generateWhatsAppReport() {
 
 // Update Static HTML Elements on language toggle
 function updateStaticTexts() {
-  // App Title & Subtitle
   const titleEl = document.getElementById('header-app-title');
   const subEl = document.getElementById('header-app-subtitle');
   const badgeEl = document.getElementById('header-badge-country');
@@ -517,6 +596,9 @@ function updateStaticTexts() {
   // Update Settings Modal Texts
   const settingsTitleEl = document.getElementById('settings-modal-title');
   const settingsSubEl = document.getElementById('settings-modal-sub');
+  const labelManageSecEl = document.getElementById('label-manage-sections');
+  const descManageSecEl = document.getElementById('desc-manage-sections');
+  const btnOpenSecMgrText = document.getElementById('btn-open-sec-mgr-text');
   const labelSoundEl = document.getElementById('label-sound');
   const descSoundEl = document.getElementById('desc-sound');
   const btnToggleSound = document.getElementById('btn-toggle-sound');
@@ -531,6 +613,9 @@ function updateStaticTexts() {
 
   if (settingsTitleEl) settingsTitleEl.textContent = t('settingsTitle');
   if (settingsSubEl) settingsSubEl.textContent = t('settingsSubtitle');
+  if (labelManageSecEl) labelManageSecEl.textContent = t('labelManageSections');
+  if (descManageSecEl) descManageSecEl.textContent = t('descManageSections');
+  if (btnOpenSecMgrText) btnOpenSecMgrText.textContent = t('btnOpenSectionMgr');
   if (labelSoundEl) labelSoundEl.textContent = t('labelSound');
   if (descSoundEl) descSoundEl.textContent = t('soundDesc');
   if (btnToggleSound) btnToggleSound.textContent = soundEnabled ? t('soundOn') : t('soundOff');
@@ -542,6 +627,25 @@ function updateStaticTexts() {
   if (descResetSampleEl) descResetSampleEl.textContent = t('resetSampleDesc');
   if (btnResetSampleText) btnResetSampleText.textContent = t('btnResetSample');
   if (btnCloseSettings) btnCloseSettings.textContent = t('btnClose');
+
+  // Update Section Manager Modal Texts
+  const secModalTitle = document.getElementById('sec-mgr-modal-title');
+  const secModalSub = document.getElementById('sec-mgr-modal-sub');
+  const lblSecNameEn = document.getElementById('lbl-sec-name-en');
+  const lblSecNameMy = document.getElementById('lbl-sec-name-my');
+  const lblSecIcon = document.getElementById('lbl-sec-icon');
+  const lblSecColor = document.getElementById('lbl-sec-color');
+  const btnCreateSecText = document.getElementById('btn-create-sec-text');
+  const existingSecTitle = document.getElementById('existing-sec-title');
+
+  if (secModalTitle) secModalTitle.textContent = t('manageSectionsTitle');
+  if (secModalSub) secModalSub.textContent = t('manageSectionsSub');
+  if (lblSecNameEn) lblSecNameEn.textContent = t('secNameEnLabel');
+  if (lblSecNameMy) lblSecNameMy.textContent = t('secNameMyLabel');
+  if (lblSecIcon) lblSecIcon.textContent = t('secIconLabel');
+  if (lblSecColor) lblSecColor.textContent = t('secColorLabel');
+  if (btnCreateSecText) btnCreateSecText.textContent = t('btnCreateSection');
+  if (existingSecTitle) existingSecTitle.textContent = t('existingSectionsTitle');
 
   // Update WhatsApp Modal Texts
   const reportModalTitle = document.getElementById('report-modal-title');
@@ -630,18 +734,70 @@ function renderSummary() {
     </div>
   `;
 
-  // Attach event listener to Hantar Boss button
   document.getElementById('btn-open-report')?.addEventListener('click', () => {
     openReportModal();
   });
 
-  // Attach listeners to KPI buttons for rapid filtering
   document.querySelectorAll('[data-filter-kpi]').forEach(btn => {
     btn.addEventListener('click', () => {
       const targetFilter = btn.getAttribute('data-filter-kpi');
       activeFilter = activeFilter === targetFilter ? 'all' : targetFilter;
       renderApp();
     });
+  });
+}
+
+// Render Dynamic Section Tabs
+function renderSectionTabs() {
+  const container = document.getElementById('section-tabs-container');
+  if (!container) return;
+
+  const totalAll = items.length;
+
+  let tabsHtml = `
+    <!-- All Items Tab -->
+    <button data-section-id="ALL" class="active-press whitespace-nowrap py-2 px-3 text-xs font-black rounded-xl transition-all flex items-center justify-center gap-1.5 flex-shrink-0 ${activeSection === 'ALL' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'}">
+      <span>${t('tabAll')}</span>
+      <span class="text-[10px] font-bold px-1.5 py-0.2 rounded-full ${activeSection === 'ALL' ? 'bg-slate-900 text-white' : 'bg-slate-200 text-slate-600'}">
+        ${totalAll}
+      </span>
+    </button>
+  `;
+
+  // Dynamic Tabs for Each Section
+  sections.forEach(sec => {
+    const isActive = activeSection === sec.id;
+    const count = items.filter(i => i.section === sec.id).length;
+    const label = currentLang === 'my' ? sec.nameMy : sec.nameEn;
+
+    tabsHtml += `
+      <button data-section-id="${sec.id}" class="active-press whitespace-nowrap py-2 px-3 text-xs font-black rounded-xl transition-all flex items-center justify-center gap-1.5 flex-shrink-0 ${isActive ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'}">
+        <span>${sec.icon} ${label}</span>
+        <span class="text-[10px] font-bold px-1.5 py-0.2 rounded-full ${isActive ? 'bg-slate-900 text-white' : 'bg-slate-200 text-slate-600'}">
+          ${count}
+        </span>
+      </button>
+    `;
+  });
+
+  // Add Section Button in Tabs
+  tabsHtml += `
+    <button id="btn-open-add-section-tab" class="active-press whitespace-nowrap py-2 px-3 text-xs font-bold rounded-xl text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition-all flex items-center justify-center gap-1 flex-shrink-0">
+      <span>${t('btnAddSectionTab')}</span>
+    </button>
+  `;
+
+  container.innerHTML = tabsHtml;
+
+  container.querySelectorAll('[data-section-id]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      activeSection = btn.getAttribute('data-section-id');
+      renderApp();
+    });
+  });
+
+  document.getElementById('btn-open-add-section-tab')?.addEventListener('click', () => {
+    openSectionManagerModal();
   });
 }
 
@@ -713,6 +869,8 @@ function renderItemCards() {
 
   container.innerHTML = filtered.map(item => {
     const exp = getExpiryInfo(item.expiryDate);
+    const sec = getSectionById(item.section);
+    const secLabel = currentLang === 'my' ? sec.nameMy : sec.nameEn;
 
     // Stock Status Config
     let statusBadgeClass = 'bg-emerald-50 text-emerald-800 border-emerald-300';
@@ -751,18 +909,30 @@ function renderItemCards() {
     // Visual thumbnail
     const svgIllustration = getProductSvg(item.svgIcon, item.section);
 
+    // Dynamic section color badge classes
+    const colorClasses = {
+      amber: 'bg-amber-100 text-amber-900 border-amber-200',
+      rose: 'bg-rose-100 text-rose-900 border-rose-200',
+      emerald: 'bg-emerald-100 text-emerald-900 border-emerald-200',
+      cyan: 'bg-cyan-100 text-cyan-900 border-cyan-200',
+      indigo: 'bg-indigo-100 text-indigo-900 border-indigo-200',
+      purple: 'bg-purple-100 text-purple-900 border-purple-200',
+      slate: 'bg-slate-100 text-slate-900 border-slate-200'
+    };
+    const badgeColor = colorClasses[sec.color] || colorClasses.emerald;
+
     return `
       <div data-item-id="${item.id}" class="bg-white rounded-2xl p-3.5 shadow-sm border border-slate-200/90 relative transition-all ${statusBorderClass} ${item.checkedToday ? 'card-checked bg-slate-50/40' : ''}">
         
         <!-- Top Metadata Row: Section + Shelf Location + Checked Pill -->
         <div class="flex items-center justify-between gap-1.5 mb-2">
           <div class="flex items-center gap-1.5 flex-wrap">
-            <!-- Section Badge -->
-            <span class="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md ${item.section === 'DIY' ? 'bg-amber-100 text-amber-900 border border-amber-200' : 'bg-rose-100 text-rose-900 border border-rose-200'}">
-              ${item.section === 'DIY' ? (currentLang === 'my' ? '🔧 DIY' : '🔧 DIY') : (currentLang === 'my' ? '💊 ဆေးဝါး' : '💊 Med')}
+            <!-- Dynamic Section Badge -->
+            <span class="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md border ${badgeColor}">
+              ${sec.icon} ${secLabel}
             </span>
 
-            <!-- Shelf Location Badge (Prominent for aisle walking) -->
+            <!-- Shelf Location Badge -->
             <span class="inline-flex items-center gap-1 text-[11px] font-bold bg-slate-800 text-slate-100 px-2.5 py-0.5 rounded-md shadow-xs">
               <svg class="w-3 h-3 text-emerald-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/></svg>
               ${displayedShelf}
@@ -834,13 +1004,13 @@ function renderItemCards() {
         <!-- BOTTOM ACTION BUTTONS: One-Handed Mobile Fast Toggles -->
         <div class="mt-3 pt-2.5 border-t border-slate-100 grid grid-cols-2 gap-2">
           
-          <!-- Stock Cycle Button (One tap to cycle) -->
+          <!-- Stock Cycle Button -->
           <button data-action="cycle-stock" data-id="${item.id}" class="active-press flex items-center justify-between px-2.5 py-2 rounded-xl border text-[11px] font-extrabold shadow-xs ${statusBadgeClass} transition-all">
             <span class="truncate">${statusText}</span>
             <span class="text-xs opacity-75 ml-1">↻</span>
           </button>
 
-          <!-- Price Tag Verification Button (One tap to check) -->
+          <!-- Price Tag Verification Button -->
           <button data-action="toggle-price-tag" data-id="${item.id}" class="active-press flex items-center justify-between px-2.5 py-2 rounded-xl border text-[11px] font-extrabold transition-all shadow-xs ${item.priceTagChecked ? 'bg-emerald-50 text-emerald-800 border-emerald-300' : 'bg-red-50 text-red-700 border-red-300 animate-pulse'}">
             <div class="flex items-center gap-1 truncate">
               <span>${item.priceTagChecked ? '🏷️' : '⚠️'}</span>
@@ -868,7 +1038,6 @@ function renderItemCards() {
     `;
   }).join('');
 
-  // Attach card event listeners
   container.querySelectorAll('[data-action]').forEach(btn => {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -890,39 +1059,6 @@ function renderItemCards() {
   });
 }
 
-// Render Section Tabs
-function renderSectionTabs() {
-  const tabs = [
-    { id: 'ALL', label: t('tabAll') },
-    { id: 'DIY', label: t('tabDiy') },
-    { id: 'Medicine', label: t('tabMed') }
-  ];
-
-  const container = document.getElementById('section-tabs-container');
-  if (!container) return;
-
-  container.innerHTML = tabs.map(tab => {
-    const isActive = activeSection === tab.id;
-    const count = items.filter(i => tab.id === 'ALL' || i.section === tab.id).length;
-
-    return `
-      <button data-section-id="${tab.id}" class="active-press flex-1 py-2 px-2 text-xs font-black rounded-xl transition-all flex items-center justify-center gap-1.5 whitespace-nowrap ${isActive ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'}">
-        <span>${tab.label}</span>
-        <span class="text-[10px] font-bold px-1.5 py-0.2 rounded-full ${isActive ? 'bg-slate-900 text-white' : 'bg-slate-200 text-slate-600'}">
-          ${count}
-        </span>
-      </button>
-    `;
-  }).join('');
-
-  container.querySelectorAll('[data-section-id]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      activeSection = btn.getAttribute('data-section-id');
-      renderApp();
-    });
-  });
-}
-
 // Photo Zoom Modal
 function openPhotoZoom(id) {
   const item = items.find(i => i.id === id);
@@ -932,6 +1068,8 @@ function openPhotoZoom(id) {
   const modalContent = document.getElementById('photo-modal-content');
   if (!modal || !modalContent) return;
 
+  const sec = getSectionById(item.section);
+  const secLabel = currentLang === 'my' ? sec.nameMy : sec.nameEn;
   const svgIllustration = getProductSvg(item.svgIcon, item.section);
   const displayedAlias = currentLang === 'my' && item.aliasBurmese ? item.aliasBurmese : (item.aliasEnglish || item.aliasMalay || '');
   const displayedShelf = currentLang === 'my' && item.shelfLocationBurmese ? item.shelfLocationBurmese : item.shelfLocation;
@@ -956,8 +1094,8 @@ function openPhotoZoom(id) {
 
       <div class="p-4">
         <div class="flex items-center gap-2 mb-1">
-          <span class="text-[10px] uppercase font-black px-2 py-0.5 rounded ${item.section === 'DIY' ? 'bg-amber-100 text-amber-800' : 'bg-rose-100 text-rose-800'}">
-            ${item.section}
+          <span class="text-[10px] uppercase font-black px-2 py-0.5 rounded bg-slate-100 text-slate-800 border border-slate-200">
+            ${sec.icon} ${secLabel}
           </span>
           <span class="text-xs font-bold text-slate-500">${displayedCategory}</span>
         </div>
@@ -993,6 +1131,55 @@ function openPhotoZoom(id) {
   });
 }
 
+// Section Manager Modal
+export function openSectionManagerModal() {
+  const modal = document.getElementById('section-manager-modal');
+  renderSectionManagerList();
+  modal?.classList.remove('hidden');
+  modal?.classList.add('flex');
+}
+
+function renderSectionManagerList() {
+  const container = document.getElementById('section-manager-list');
+  if (!container) return;
+
+  container.innerHTML = sections.map(sec => {
+    const itemCount = items.filter(i => i.section === sec.id).length;
+    const name = currentLang === 'my' ? sec.nameMy : sec.nameEn;
+    const isDefault = sec.id === 'DIY' || sec.id === 'Medicine';
+
+    return `
+      <div class="flex items-center justify-between p-3 rounded-2xl bg-white border border-slate-200 shadow-xs">
+        <div class="flex items-center gap-2.5">
+          <span class="text-2xl">${sec.icon}</span>
+          <div>
+            <h4 class="text-xs font-bold text-slate-900">${name}</h4>
+            <p class="text-[10px] text-slate-400">${sec.nameEn} • ${sec.nameMy} (${itemCount} ${t('itemsCountLabel')})</p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-1.5">
+          ${!isDefault ? `
+            <button data-delete-section="${sec.id}" class="active-press p-1.5 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg text-xs font-bold">
+              ✕
+            </button>
+          ` : `
+            <span class="text-[10px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">Default</span>
+          `}
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  container.querySelectorAll('[data-delete-section]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const secId = btn.getAttribute('data-delete-section');
+      deleteSection(secId);
+      renderSectionManagerList();
+    });
+  });
+}
+
 // Edit / Add Item Modal
 let editingItemId = null;
 
@@ -1025,8 +1212,6 @@ function populateItemForm(item) {
 
   // Localized form labels
   document.getElementById('lbl-form-section').textContent = t('labelSection');
-  document.getElementById('lbl-form-diy').textContent = t('sectionDiy');
-  document.getElementById('lbl-form-med').textContent = t('sectionMed');
   document.getElementById('lbl-form-name').textContent = t('labelOfficialName');
   document.getElementById('lbl-form-alias').textContent = t('labelAlias');
   document.getElementById('lbl-form-category').textContent = t('labelCategory');
@@ -1046,10 +1231,25 @@ function populateItemForm(item) {
   document.getElementById('btn-save-item').textContent = t('btnSave');
   document.getElementById('btn-delete-item').textContent = t('btnDelete');
 
+  // Populate dynamic section selector dropdown/radios
+  const sectionSelectContainer = document.getElementById('form-section-options');
+  if (sectionSelectContainer) {
+    sectionSelectContainer.innerHTML = sections.map(sec => {
+      const isSelected = item ? item.section === sec.id : (activeSection !== 'ALL' ? activeSection === sec.id : sec.id === 'DIY');
+      const label = currentLang === 'my' ? sec.nameMy : sec.nameEn;
+      return `
+        <label class="active-press flex items-center justify-center gap-1.5 p-2 rounded-xl border border-slate-200 cursor-pointer has-[:checked]:bg-emerald-50 has-[:checked]:border-emerald-500 has-[:checked]:text-emerald-950 font-bold text-xs shadow-xs">
+          <input type="radio" name="section" value="${sec.id}" class="sr-only" ${isSelected ? 'checked' : ''}>
+          <span>${sec.icon}</span>
+          <span class="truncate">${label}</span>
+        </label>
+      `;
+    }).join('');
+  }
+
   if (item) {
     form.name.value = item.name || '';
     form.alias.value = currentLang === 'my' && item.aliasBurmese ? item.aliasBurmese : (item.aliasEnglish || item.aliasMalay || '');
-    form.section.value = item.section || 'DIY';
     form.category.value = currentLang === 'my' && item.categoryBurmese ? item.categoryBurmese : (item.category || '');
     form.shelfLocation.value = currentLang === 'my' && item.shelfLocationBurmese ? item.shelfLocationBurmese : (item.shelfLocation || '');
     form.price.value = item.price || '';
@@ -1062,7 +1262,6 @@ function populateItemForm(item) {
     document.getElementById('btn-delete-item').classList.remove('hidden');
   } else {
     form.reset();
-    form.section.value = activeSection === 'ALL' ? 'DIY' : activeSection;
     form.stockStatus.value = 'in_stock';
     form.priceTagChecked.checked = true;
     updateImagePreview('');
@@ -1146,6 +1345,11 @@ function setupEventListeners() {
     openAddModal();
   });
 
+  // Quick Add Section from inside Item Form
+  document.getElementById('btn-quick-add-sec')?.addEventListener('click', () => {
+    openSectionManagerModal();
+  });
+
   // Reset Daily Check confirmation
   document.getElementById('btn-reset-daily')?.addEventListener('click', () => {
     if (confirm(t('confirmResetShift'))) {
@@ -1153,7 +1357,7 @@ function setupEventListeners() {
     }
   });
 
-  // Form submission
+  // Form submission (Add / Edit item)
   const itemForm = document.getElementById('item-form');
   itemForm?.addEventListener('submit', (e) => {
     e.preventDefault();
@@ -1166,12 +1370,13 @@ function setupEventListeners() {
     }
 
     const aliasVal = formData.get('alias')?.toString().trim() || '';
+    const sectionVal = formData.get('section')?.toString() || 'DIY';
 
     const newItemData = {
       name,
       aliasBurmese: currentLang === 'my' ? aliasVal : '',
       aliasEnglish: currentLang === 'en' ? aliasVal : '',
-      section: formData.get('section')?.toString() || 'DIY',
+      section: sectionVal,
       category: formData.get('category')?.toString().trim() || 'General',
       shelfLocation: formData.get('shelfLocation')?.toString().trim() || 'Unassigned',
       price: parseFloat(formData.get('price')?.toString()) || 0,
@@ -1198,7 +1403,7 @@ function setupEventListeners() {
       }
     } else {
       // Create new
-      const newId = `${newItemData.section.toLowerCase()}-${Date.now().toString(36)}`;
+      const newId = `${sectionVal.toLowerCase()}-${Date.now().toString(36)}`;
       items.unshift({
         id: newId,
         ...newItemData,
@@ -1210,6 +1415,41 @@ function setupEventListeners() {
     saveData();
     closeAllModals();
     renderApp();
+  });
+
+  // Section Creator Form submission
+  const newSecForm = document.getElementById('new-section-form');
+  newSecForm?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const nameEn = document.getElementById('input-sec-name-en')?.value.trim();
+    const nameMy = document.getElementById('input-sec-name-my')?.value.trim();
+    const icon = document.getElementById('input-sec-icon')?.value.trim() || '📦';
+    const color = document.getElementById('input-sec-color')?.value || 'emerald';
+
+    if (!nameEn && !nameMy) {
+      alert(currentLang === 'my' ? 'ကဏ္ဍအမည် ထည့်သွင်းပေးပါ!' : 'Please enter a section name!');
+      return;
+    }
+
+    createNewSection(nameEn, nameMy, icon, color);
+    newSecForm.reset();
+    renderSectionManagerList();
+  });
+
+  // Emoji quick pick buttons for Section Creator
+  document.querySelectorAll('[data-emoji-pick]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const iconInput = document.getElementById('input-sec-icon');
+      if (iconInput) {
+        iconInput.value = btn.getAttribute('data-emoji-pick');
+      }
+    });
+  });
+
+  // Open Section Manager from Settings
+  document.getElementById('btn-open-section-mgr')?.addEventListener('click', () => {
+    closeAllModals();
+    openSectionManagerModal();
   });
 
   // Delete item button
@@ -1233,7 +1473,7 @@ function setupEventListeners() {
     updateImagePreview(e.target.value);
   });
 
-  // Local File Upload photo preview (base64 reader for localStorage persistence)
+  // Local File Upload photo preview
   const fileInput = document.getElementById('image-file-input');
   fileInput?.addEventListener('change', (e) => {
     const file = e.target.files?.[0];
@@ -1281,7 +1521,7 @@ function setupEventListeners() {
     showToast(t('toastReportCopied'), 'success');
   }
 
-  // Direct WhatsApp Button (opens WhatsApp with prefilled message)
+  // Direct WhatsApp Button
   document.getElementById('btn-share-whatsapp')?.addEventListener('click', () => {
     const text = document.getElementById('report-text-content')?.value;
     if (!text) return;
@@ -1298,7 +1538,13 @@ function setupEventListeners() {
 
   // Export JSON file
   document.getElementById('btn-export-json')?.addEventListener('click', () => {
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(items, null, 2));
+    const backupObj = {
+      version: '2.0',
+      exportedAt: new Date().toISOString(),
+      sections,
+      items
+    };
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupObj, null, 2));
     const downloadAnchor = document.createElement('a');
     downloadAnchor.setAttribute("href", dataStr);
     downloadAnchor.setAttribute("download", `stock-ranger-backup-${new Date().toISOString().split('T')[0]}.json`);
@@ -1318,9 +1564,16 @@ function setupEventListeners() {
     reader.onload = (event) => {
       try {
         const parsed = JSON.parse(event.target.result);
-        if (Array.isArray(parsed)) {
+        if (parsed && (Array.isArray(parsed) || Array.isArray(parsed.items))) {
           if (confirm(t('confirmRestore'))) {
-            items = parsed;
+            if (Array.isArray(parsed)) {
+              items = parsed;
+            } else {
+              items = parsed.items || [];
+              if (Array.isArray(parsed.sections) && parsed.sections.length > 0) {
+                sections = parsed.sections;
+              }
+            }
             saveData();
             closeAllModals();
             renderApp();
@@ -1340,6 +1593,7 @@ function setupEventListeners() {
   document.getElementById('btn-reset-sample-data')?.addEventListener('click', () => {
     if (confirm(t('confirmResetSample'))) {
       items = getInitialItems();
+      sections = getDefaultSections();
       saveData();
       closeAllModals();
       renderApp();

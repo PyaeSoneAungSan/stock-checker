@@ -4,12 +4,13 @@ export const translations = {
   en: {
     // Branding
     appTitle: "Stock Ranger",
-    appSubtitle: "Mini Mart Inventory • DIY & Pharmacy",
+    appSubtitle: "Mini Mart Inventory • Multi-Section Audit",
     badgeCountry: "POS",
 
     // Header actions
     resetDailyTooltip: "Reset Daily Check",
     settingsTooltip: "Data Backup & Settings",
+    manageSectionsTooltip: "Manage Sections & Categories",
     addItemBtn: "Add Item",
 
     // Daily Summary
@@ -23,8 +24,7 @@ export const translations = {
 
     // Section Tabs
     tabAll: "All Items",
-    tabDiy: "🔧 DIY Section",
-    tabMed: "💊 Pharmacy",
+    btnAddSectionTab: "➕ Add",
 
     // Search & Filter
     searchPlaceholder: "Search by name, Burmese alias, rack (e.g. Rack D, Panadol)...",
@@ -79,16 +79,15 @@ export const translations = {
     addTitle: "Add New Item",
     editTitle: "Edit Item",
     formSubtitle: "Shelf location, price, and expiry tracking",
-    labelSection: "Section *",
-    sectionDiy: "🔧 DIY Section",
-    sectionMed: "💊 Pharmacy",
+    labelSection: "Section / Department *",
+    btnQuickAddSection: "➕ New Section",
     labelOfficialName: "Official Item Name *",
-    namePlaceholder: "e.g. Panadol ActiFast 500mg, LED Bulb 12W",
+    namePlaceholder: "e.g. Maggi Noodles, Panadol ActiFast, LED Bulb",
     labelAlias: "Local / Burmese Alias",
-    aliasPlaceholder: "e.g. ပါရာစီတမော အနီ, ၅၀၂ ကော်",
-    labelCategory: "Category",
+    aliasPlaceholder: "e.g. မာဂီ ခေါက်ဆွဲ, ပါရာစီတမော အနီ, ၅၀၂ ကော်",
+    labelCategory: "Category / Subcategory",
     labelShelf: "Shelf Location *",
-    shelfPlaceholder: "e.g. Rack D - Middle",
+    shelfPlaceholder: "e.g. Rack D - Middle, Aisle 2",
     labelPrice: "Price",
     labelExpiry: "Expiry Date",
     labelStockStatus: "Current Stock Status",
@@ -98,10 +97,24 @@ export const translations = {
     photoUrlPlaceholder: "Paste photo URL (https://...)",
     photoUploadBtn: "📁 Choose Image File",
     labelNotes: "Notes / Supplier Info",
-    notesPlaceholder: "e.g. Reorder 2 boxes from Jaya Wholesale.",
+    notesPlaceholder: "e.g. Reorder 2 boxes from supplier.",
     btnCancel: "Cancel",
     btnSave: "Save Item",
     btnDelete: "Delete",
+
+    // Section Manager Modal
+    manageSectionsTitle: "Manage Sections & Categories",
+    manageSectionsSub: "Add or manage store departments (DIY, Pharmacy, Groceries, Snacks, etc.)",
+    secNameEnLabel: "Section Name (English) *",
+    secNameMyLabel: "Section Name (Burmese) *",
+    secIconLabel: "Icon / Emoji",
+    secColorLabel: "Badge Color",
+    btnCreateSection: "Create New Section",
+    existingSectionsTitle: "Active Store Sections",
+    itemsCountLabel: "items",
+    toastSectionCreated: "New section created!",
+    toastSectionDeleted: "Section removed successfully",
+    confirmDeleteSection: "Are you sure you want to delete this section? Items in this section will be reassigned.",
 
     // WhatsApp Report Modal
     reportTitle: "WhatsApp Report for Manager",
@@ -113,6 +126,9 @@ export const translations = {
     // Settings Modal
     settingsTitle: "Settings & Backup",
     settingsSubtitle: "LocalStorage management & JSON backup",
+    labelManageSections: "Store Departments / Sections",
+    descManageSections: "Add custom categories like Groceries, Snacks, Drinks, Stationery, etc.",
+    btnOpenSectionMgr: "Manage Sections",
     labelSound: "Sound Effects (Audio FX)",
     soundDesc: "Interactive click sounds when checking shelves",
     soundOn: "🔊 Sound: ON",
@@ -159,12 +175,13 @@ export const translations = {
   my: {
     // Branding
     appTitle: "စတော့ စစ်ဆေးရေး",
-    appSubtitle: "မီနီမတ် ကုန်ပစ္စည်းစစ်ဆေးမှု • DIY နှင့် ဆေးဝါးများ",
+    appSubtitle: "မီနီမတ် ကုန်ပစ္စည်းစစ်ဆေးမှု • ကဏ္ဍစုံ စစ်ဆေးရေး",
     badgeCountry: "မြန်မာ",
 
     // Header actions
     resetDailyTooltip: "နေ့စဉ်စစ်ဆေးမှု အသစ်စတင်ရန်",
     settingsTooltip: "ဒေတာသိမ်းဆည်းမှုနှင့် ဆက်တင်များ",
+    manageSectionsTooltip: "ကဏ္ဍ/အုပ်စုများ စီမံခန့်ခွဲရန်",
     addItemBtn: "ပစ္စည်းထည့်",
 
     // Daily Summary
@@ -178,8 +195,7 @@ export const translations = {
 
     // Section Tabs
     tabAll: "အားလုံး",
-    tabDiy: "🔧 အိမ်သုံး/DIY",
-    tabMed: "💊 ဆေးဝါးများ",
+    btnAddSectionTab: "➕ ကဏ္ဍသစ်",
 
     // Search & Filter
     searchPlaceholder: "ပစ္စည်းအမည်၊ မြန်မာအမည်၊ စင်နေရာဖြင့် ရှာဖွေပါ...",
@@ -234,16 +250,15 @@ export const translations = {
     addTitle: "ပစ္စည်းအသစ် ထည့်သွင်းမည်",
     editTitle: "ပစ္စည်းအချက်အလက် ပြင်ဆင်မည်",
     formSubtitle: "စင်နေရာ၊ ဈေးနှုန်းနှင့် သက်တမ်းကုန်ဆုံးရက် စာရင်းသွင်းခြင်း",
-    labelSection: "ကဏ္ဍ အုပ်စု *",
-    sectionDiy: "🔧 အိမ်သုံး/DIY",
-    sectionMed: "💊 ဆေးဝါးများ",
+    labelSection: "ကဏ္ဍ အုပ်စု (Section) *",
+    btnQuickAddSection: "➕ ကဏ္ဍသစ်ထည့်",
     labelOfficialName: "တရားဝင် ပစ္စည်းအမည် *",
-    namePlaceholder: "ဥပမာ - Panadol ActiFast 500mg, LED Bulb 12W",
+    namePlaceholder: "ဥပမာ - မာဂီခေါက်ဆွဲ၊ Panadol ActiFast၊ LED မီးသီး",
     labelAlias: "မြန်မာအမည် / ခေါ်ဝေါ်ပုံ",
-    aliasPlaceholder: "ဥပမာ - ပါရာစီတမော အနီ၊ ၅၀၂ ကော်",
-    labelCategory: "အမျိုးအစား (Category)",
+    aliasPlaceholder: "ဥပမာ - ပါရာစီတမော အနီ၊ ၅၀၂ ကော်၊ မာဂီ ခေါက်ဆွဲ",
+    labelCategory: "အမျိုးအစားခွဲ (Subcategory)",
     labelShelf: "စင်တည်နေရာ (Shelf Location) *",
-    shelfPlaceholder: "ဥပမာ - စင် D - အလယ်ထပ်",
+    shelfPlaceholder: "ဥပမာ - စင် D - အလယ်ထပ်၊ စင်တန်း ၂",
     labelPrice: "ဈေးနှုန်း (RM)",
     labelExpiry: "သက်တမ်းကုန်ဆုံးရက် (Expiry)",
     labelStockStatus: "လက်ရှိ စတော့အခြေအနေ",
@@ -253,10 +268,24 @@ export const translations = {
     photoUrlPlaceholder: "ဓာတ်ပုံ လင့်ခ် ထည့်ပါ (https://...)",
     photoUploadBtn: "📁 ဖုန်းထဲမှ ဓာတ်ပုံရွေးမည်",
     labelNotes: "မှတ်ချက် / ကုန်သည် သတင်းအချက်အလက်",
-    notesPlaceholder: "ဥပမာ - Jaya Wholesale မှ ၂ ဖာ ထပ်မှာယူရန်။",
+    notesPlaceholder: "ဥပမာ - ကုန်သည်ထံမှ ၂ ဖာ ထပ်မှာယူရန်။",
     btnCancel: "မလုပ်တော့ပါ",
     btnSave: "သိမ်းဆည်းမည်",
     btnDelete: "ဖျက်မည်",
+
+    // Section Manager Modal
+    manageSectionsTitle: "ကဏ္ဍနှင့် အုပ်စုများ စီမံခန့်ခွဲခြင်း",
+    manageSectionsSub: "ဆိုင်တွင်း ကဏ္ဍအသစ်များ ထည့်သွင်းခြင်း (DIY, ဆေးဝါး, ကုန်စုံ, အချိုရည်, စာရေးကိရိယာ စသည်)",
+    secNameEnLabel: "ကဏ္ဍအမည် (အင်္ဂလိပ်) *",
+    secNameMyLabel: "ကဏ္ဍအမည် (မြန်မာ) *",
+    secIconLabel: "အိုင်ကွန် / အီမိုဂျီ (Emoji)",
+    secColorLabel: "တံဆိပ် အရောင်",
+    btnCreateSection: "ကဏ္ဍအသစ် ဖန်တီးမည်",
+    existingSectionsTitle: "လက်ရှိ သတ်မှတ်ထားသော ကဏ္ဍများ",
+    itemsCountLabel: "ခု",
+    toastSectionCreated: "ကဏ္ဍအသစ် ဖန်တီးပြီးပါပြီ!",
+    toastSectionDeleted: "ကဏ္ဍကို ဖျက်ပြီးပါပြီ",
+    confirmDeleteSection: "ဤကဏ္ဍကို ဖျက်ရန် သေချာပါသလား? ၎င်းအတွင်းရှိ ပစ္စည်းများကို အခြားကဏ္ဍသို့ ပြောင်းပါမည်။",
 
     // WhatsApp Report Modal
     reportTitle: "မန်နေဂျာထံ ပို့မည့် WhatsApp အစီရင်ခံစာ",
@@ -268,6 +297,9 @@ export const translations = {
     // Settings Modal
     settingsTitle: "ဆက်တင်များနှင့် ဒေတာသိမ်းဆည်းမှု",
     settingsSubtitle: "LocalStorage နှင့် JSON Backup စီမံခန့်ခွဲမှု",
+    labelManageSections: "ဆိုင်တွင်း ကဏ္ဍများ (Store Sections)",
+    descManageSections: "ကုန်စုံ၊ အချိုရည်၊ သရေစာ၊ စာရေးကိရိယာ အစရှိသော ကဏ္ဍအသစ်များ ထည့်ရန်",
+    btnOpenSectionMgr: "ကဏ္ဍများ ပြင်ဆင်ရန်",
     labelSound: "အသံစနစ် (Sound FX)",
     soundDesc: "စစ်ဆေးစဉ် ခလုတ်နှိပ်သည့် အသံမြည်ခြင်း",
     soundOn: "🔊 အသံ: ဖွင့်ထားသည်",

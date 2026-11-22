@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>Stock Ranger - DIY & Pharmacy Mini-Mart Inventory</title>
-  <meta name="description" content="Fast mobile-first web app to audit goods, check price tags, and track medicine expiry dates">
+  <title>Stock Ranger - Mini-Mart Multi-Section Inventory</title>
+  <meta name="description" content="Fast mobile-first web app to audit goods, manage categories, check price tags, and track medicine expiry dates">
   <meta name="theme-color" content="#0f172a">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -51,7 +51,7 @@
               <h1 id="header-app-title" class="text-sm font-black tracking-tight text-white leading-none truncate">Stock Ranger</h1>
               <span id="header-badge-country" class="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex-shrink-0">POS</span>
             </div>
-            <p id="header-app-subtitle" class="text-[11px] font-medium text-slate-400 mt-0.5 truncate">Mini Mart Inventory • DIY & Pharmacy</p>
+            <p id="header-app-subtitle" class="text-[11px] font-medium text-slate-400 mt-0.5 truncate">Mini Mart Inventory • Multi-Section Audit</p>
           </div>
         </div>
 
@@ -88,9 +88,9 @@
       <!-- 1. DAILY SUMMARY & PROGRESS HEADER -->
       <section id="daily-summary-container" aria-label="Daily Check Summary"></section>
 
-      <!-- 2. SECTION TABS (All, DIY, Medicine) -->
-      <section class="bg-slate-200/80 p-1 rounded-2xl flex items-center gap-1 shadow-inner" id="section-tabs-container" aria-label="Section Tabs">
-        <!-- Rendered by JS -->
+      <!-- 2. DYNAMIC HORIZONTAL SECTION TABS (DIY, Medicine, Groceries, Snacks, etc.) -->
+      <section class="bg-slate-200/80 p-1.5 rounded-2xl flex items-center gap-1.5 overflow-x-auto no-scrollbar shadow-inner" id="section-tabs-container" aria-label="Section Tabs">
+        <!-- Rendered dynamically by app.js -->
       </section>
 
       <!-- 3. INSTANT SEARCH BAR & SORTING -->
@@ -175,55 +175,53 @@
       <!-- Form Body (Scrollable) -->
       <form id="item-form" class="overflow-y-auto px-5 py-4 space-y-4 flex-1 text-xs">
         
-        <!-- Section Selector -->
+        <!-- Section Selector (Dynamic Categories) -->
         <div>
-          <label id="lbl-form-section" class="block font-bold text-slate-700 mb-1.5">Section *</label>
-          <div class="grid grid-cols-2 gap-2">
-            <label class="active-press flex items-center justify-center gap-2 p-2.5 rounded-xl border border-slate-200 cursor-pointer has-[:checked]:bg-amber-50 has-[:checked]:border-amber-500 has-[:checked]:text-amber-900 font-bold">
-              <input type="radio" name="section" value="DIY" class="sr-only" checked>
-              <span id="lbl-form-diy">🔧 DIY Section</span>
-            </label>
-            <label class="active-press flex items-center justify-center gap-2 p-2.5 rounded-xl border border-slate-200 cursor-pointer has-[:checked]:bg-rose-50 has-[:checked]:border-rose-500 has-[:checked]:text-rose-900 font-bold">
-              <input type="radio" name="section" value="Medicine" class="sr-only">
-              <span id="lbl-form-med">💊 Pharmacy</span>
-            </label>
+          <div class="flex items-center justify-between mb-1.5">
+            <label id="lbl-form-section" class="block font-bold text-slate-700">Section / Department *</label>
+            <button type="button" id="btn-quick-add-sec" class="active-press text-emerald-700 hover:text-emerald-800 font-extrabold text-[11px] flex items-center gap-1">
+              <span>➕ New Section</span>
+            </button>
           </div>
+          <!-- Dynamic section radio options populated by app.js -->
+          <div id="form-section-options" class="grid grid-cols-2 gap-2 max-h-36 overflow-y-auto no-scrollbar p-1 bg-slate-50 rounded-xl border border-slate-200"></div>
         </div>
 
         <!-- Item Name (Official) -->
         <div>
           <label id="lbl-form-name" class="block font-bold text-slate-700 mb-1">Official Item Name *</label>
-          <input type="text" name="name" required placeholder="e.g. Panadol ActiFast 500mg, LED Bulb 12W" class="w-full p-2.5 rounded-xl border border-slate-200 font-semibold focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+          <input type="text" name="name" required placeholder="e.g. Maggi Noodles, Panadol ActiFast, LED Bulb" class="w-full p-2.5 rounded-xl border border-slate-200 font-semibold focus:ring-2 focus:ring-emerald-500 focus:outline-none">
         </div>
 
         <!-- Burmese / Local Alias -->
         <div>
           <label id="lbl-form-alias" class="block font-bold text-slate-700 mb-1">Local / Burmese Alias</label>
-          <input type="text" name="alias" placeholder="e.g. ပါရာစီတမော အနီ, ၅၀၂ ကော်" class="w-full p-2.5 rounded-xl border border-slate-200 font-semibold focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+          <input type="text" name="alias" placeholder="e.g. မာဂီ ခေါက်ဆွဲ, ပါရာစီတမော အနီ, ၅၀၂ ကော်" class="w-full p-2.5 rounded-xl border border-slate-200 font-semibold focus:ring-2 focus:ring-emerald-500 focus:outline-none">
         </div>
 
         <!-- Category & Shelf Location Row -->
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label id="lbl-form-category" class="block font-bold text-slate-700 mb-1">Category</label>
-            <input type="text" name="category" list="category-presets" placeholder="e.g. Pain & Fever" class="w-full p-2.5 rounded-xl border border-slate-200 font-semibold focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+            <label id="lbl-form-category" class="block font-bold text-slate-700 mb-1">Category / Subcategory</label>
+            <input type="text" name="category" list="category-presets" placeholder="e.g. Instant Food, Pain & Fever" class="w-full p-2.5 rounded-xl border border-slate-200 font-semibold focus:ring-2 focus:ring-emerald-500 focus:outline-none">
             <datalist id="category-presets">
+              <option value="Instant Food & Noodles">
+              <option value="Beverages & Drinks">
+              <option value="Crisps & Snacks">
               <option value="Lighting & Electrical">
               <option value="Hardware & Tools">
               <option value="Adhesives & Tapes">
               <option value="Plumbing & Sanitary">
               <option value="Pain, Fever & Headache">
               <option value="Cough & Throat Care">
-              <option value="Medicated Oils & Balm">
               <option value="Digestive & Stomach Care">
-              <option value="Muscle Relief & Balm">
               <option value="First Aid & Bandages">
             </datalist>
           </div>
 
           <div>
             <label id="lbl-form-shelf" class="block font-bold text-slate-700 mb-1">Shelf Location *</label>
-            <input type="text" name="shelfLocation" required placeholder="e.g. Rack D - Middle" class="w-full p-2.5 rounded-xl border border-slate-200 font-semibold focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+            <input type="text" name="shelfLocation" required placeholder="e.g. Aisle 2 - Rack G1, Shelf 2" class="w-full p-2.5 rounded-xl border border-slate-200 font-semibold focus:ring-2 focus:ring-emerald-500 focus:outline-none">
           </div>
         </div>
 
@@ -325,7 +323,98 @@
     </div>
   </div>
 
-  <!-- 2. WHATSAPP REPORT MODAL -->
+  <!-- 2. SECTION & CATEGORY MANAGER MODAL -->
+  <div id="section-manager-modal" class="modal-overlay fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-sm hidden items-end sm:items-center justify-center p-3">
+    <div class="bg-white w-full max-w-md rounded-3xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden animate-in slide-in-from-bottom duration-200">
+      
+      <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-900 text-white">
+        <div class="flex items-center gap-2">
+          <span class="text-xl">🗂️</span>
+          <div>
+            <h2 id="sec-mgr-modal-title" class="text-sm font-black">Manage Sections & Categories</h2>
+            <p id="sec-mgr-modal-sub" class="text-[11px] text-slate-400">Add or manage store departments</p>
+          </div>
+        </div>
+        <button data-close-modal class="active-press w-7 h-7 rounded-full bg-slate-800 text-slate-300 hover:bg-slate-700 flex items-center justify-center text-sm font-bold">
+          ✕
+        </button>
+      </div>
+
+      <div class="p-4 space-y-4 overflow-y-auto flex-1 text-xs">
+        
+        <!-- Add Section Mini-Form -->
+        <form id="new-section-form" class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+          <span class="font-extrabold text-slate-900 block text-xs">➕ Add New Category / Section</span>
+          
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label id="lbl-sec-name-en" class="block font-bold text-slate-700 mb-1">Section (English) *</label>
+              <input type="text" id="input-sec-name-en" required placeholder="e.g. Groceries, Drinks" class="w-full p-2 rounded-xl border border-slate-200 font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs">
+            </div>
+            <div>
+              <label id="lbl-sec-name-my" class="block font-bold text-slate-700 mb-1">Section (Burmese) *</label>
+              <input type="text" id="input-sec-name-my" required placeholder="e.g. ကုန်စုံ၊ အချိုရည်" class="w-full p-2 rounded-xl border border-slate-200 font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs">
+            </div>
+          </div>
+
+          <!-- Emoji Icon Picker -->
+          <div>
+            <label id="lbl-sec-icon" class="block font-bold text-slate-700 mb-1">Icon / Emoji</label>
+            <div class="flex items-center gap-2">
+              <input type="text" id="input-sec-icon" value="🥫" class="w-12 text-center text-lg p-1.5 rounded-xl border border-slate-200 focus:outline-none font-bold">
+              <div class="flex items-center gap-1 flex-wrap">
+                <button type="button" data-emoji-pick="🥫" class="p-1 rounded-lg bg-white border hover:bg-slate-100 text-sm">🥫</button>
+                <button type="button" data-emoji-pick="🥤" class="p-1 rounded-lg bg-white border hover:bg-slate-100 text-sm">🥤</button>
+                <button type="button" data-emoji-pick="🍪" class="p-1 rounded-lg bg-white border hover:bg-slate-100 text-sm">🍪</button>
+                <button type="button" data-emoji-pick="✏️" class="p-1 rounded-lg bg-white border hover:bg-slate-100 text-sm">✏️</button>
+                <button type="button" data-emoji-pick="🧴" class="p-1 rounded-lg bg-white border hover:bg-slate-100 text-sm">🧴</button>
+                <button type="button" data-emoji-pick="🧹" class="p-1 rounded-lg bg-white border hover:bg-slate-100 text-sm">🧹</button>
+                <button type="button" data-emoji-pick="🍞" class="p-1 rounded-lg bg-white border hover:bg-slate-100 text-sm">🍞</button>
+                <button type="button" data-emoji-pick="🧼" class="p-1 rounded-lg bg-white border hover:bg-slate-100 text-sm">🧼</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Color theme -->
+          <div class="flex items-center justify-between">
+            <div>
+              <label id="lbl-sec-color" class="block font-bold text-slate-700">Badge Color</label>
+              <select id="input-sec-color" class="mt-1 p-1.5 bg-white border border-slate-200 rounded-xl font-bold text-xs focus:outline-none">
+                <option value="emerald">Emerald (Green)</option>
+                <option value="cyan">Cyan (Blue)</option>
+                <option value="amber">Amber (Orange)</option>
+                <option value="rose">Rose (Red)</option>
+                <option value="indigo">Indigo (Purple)</option>
+                <option value="slate">Slate (Gray)</option>
+              </select>
+            </div>
+
+            <button type="submit" class="active-press px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold rounded-xl shadow text-xs mt-3">
+              <span id="btn-create-sec-text">Create Section</span>
+            </button>
+          </div>
+        </form>
+
+        <!-- Existing Sections List -->
+        <div>
+          <h3 id="existing-sec-title" class="font-bold text-slate-700 text-xs mb-2">Active Store Sections</h3>
+          <div id="section-manager-list" class="space-y-2">
+            <!-- Rendered by app.js -->
+          </div>
+        </div>
+
+      </div>
+
+      <div class="p-3.5 border-t border-slate-100 bg-slate-50 flex justify-end">
+        <button data-close-modal class="active-press px-5 py-2 bg-slate-200 text-slate-800 font-bold rounded-xl text-xs">
+          Close
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- 3. WHATSAPP REPORT MODAL -->
   <div id="report-modal" class="modal-overlay fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-sm hidden items-end sm:items-center justify-center p-3">
     <div class="bg-white w-full max-w-md rounded-3xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-in slide-in-from-bottom duration-200">
       
@@ -363,14 +452,14 @@
     </div>
   </div>
 
-  <!-- 3. PHOTO ZOOM MODAL -->
+  <!-- 4. PHOTO ZOOM MODAL -->
   <div id="photo-modal" class="modal-overlay fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md hidden items-center justify-center p-3">
     <div id="photo-modal-content" class="w-full max-w-sm flex justify-center">
       <!-- Rendered dynamically -->
     </div>
   </div>
 
-  <!-- 4. SETTINGS & BACKUP MODAL -->
+  <!-- 5. SETTINGS & BACKUP MODAL -->
   <div id="settings-modal" class="modal-overlay fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-sm hidden items-end sm:items-center justify-center p-3">
     <div class="bg-white w-full max-w-md rounded-3xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-in slide-in-from-bottom duration-200">
       
@@ -400,6 +489,17 @@
               <span>🇲🇲 မြန်မာစာ</span>
             </button>
           </div>
+        </div>
+
+        <!-- Section / Department Manager Button -->
+        <div class="p-3 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between">
+          <div>
+            <span id="label-manage-sections" class="font-bold text-slate-900 block">Store Departments / Sections</span>
+            <span id="desc-manage-sections" class="text-slate-500 text-[11px]">Add categories like Groceries, Snacks, Drinks, etc.</span>
+          </div>
+          <button id="btn-open-section-mgr" class="active-press px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold text-xs shadow">
+            <span id="btn-open-sec-mgr-text">Manage</span>
+          </button>
         </div>
 
         <!-- Sound Toggle -->

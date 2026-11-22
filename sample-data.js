@@ -1,5 +1,14 @@
-// Sample Data for Mini-Mart DIY & Medicine Inventory
-// With English & Burmese (မြန်မာ) aliases and dynamic expiry dates
+// Multi-Section Sample Data for Mini-Mart Inventory
+// With dynamic categories, English & Burmese aliases, and relative expiry dates
+
+export function getDefaultSections() {
+  return [
+    { id: "DIY", nameEn: "DIY & Hardware", nameMy: "အိမ်သုံး/DIY", icon: "🔧", color: "amber" },
+    { id: "Medicine", nameEn: "Pharmacy", nameMy: "ဆေးဝါးများ", icon: "💊", color: "rose" },
+    { id: "Groceries", nameEn: "Groceries & Food", nameMy: "ကုန်စုံနှင့် စားသောက်ကုန်", icon: "🥫", color: "emerald" },
+    { id: "SnacksDrinks", nameEn: "Snacks & Drinks", nameMy: "သရေစာနှင့် အချိုရည်", icon: "🥤", color: "cyan" }
+  ];
+}
 
 export function getInitialItems() {
   const now = new Date();
@@ -166,7 +175,7 @@ export function getInitialItems() {
       svgIcon: "tie"
     },
 
-    // --- MEDICINE SECTION ---
+    // --- MEDICINE / PHARMACY SECTION ---
     {
       id: "med-001",
       section: "Medicine",
@@ -227,7 +236,7 @@ export function getInitialItems() {
       priceTagChecked: true,
       checkedToday: false,
       lastCheckedTime: null,
-      expiryDate: addDays(24), // Expiring in 24 days!
+      expiryDate: addDays(24),
       notes: "Current stock fully depleted on shelf. Old batch expires in 24 days!",
       notesBurmese: "စင်ပေါ်တွင် ပစ္စည်းပြတ်နေသည်။ လက်ကျန်ဆေးလုံးများ ၂၄ ရက်အတွင်း သက်တမ်းကုန်မည်။",
       image: "https://images.unsplash.com/photo-1471864190281-a93a3070b6de?w=400&auto=format&fit=crop&q=80",
@@ -249,7 +258,7 @@ export function getInitialItems() {
       priceTagChecked: true,
       checkedToday: false,
       lastCheckedTime: null,
-      expiryDate: addDays(68), // Expiring in 68 days! (<90d)
+      expiryDate: addDays(68),
       notes: "Stock batch expiring in ~2 months. Follow First-In-First-Out rule.",
       notesBurmese: "လက်ကျန်ပုလင်းများသည် ၂ လခန့်အတွင်း သက်တမ်းကုန်မည်။ အဟောင်းကို ရှေ့ထုတ်ရောင်းရန်။",
       image: "https://images.unsplash.com/photo-1608248597359-5f2105151528?w=400&auto=format&fit=crop&q=80",
@@ -268,7 +277,7 @@ export function getInitialItems() {
       price: 2.50,
       stockStatus: "in_stock",
       stockQty: 15,
-      priceTagChecked: false, // Missing tag!
+      priceTagChecked: false,
       checkedToday: false,
       lastCheckedTime: null,
       expiryDate: addDays(380),
@@ -293,7 +302,7 @@ export function getInitialItems() {
       priceTagChecked: true,
       checkedToday: false,
       lastCheckedTime: null,
-      expiryDate: addDays(42), // Expiring in 42 days! (<90d)
+      expiryDate: addDays(42),
       notes: "Only 2 boxes remaining. Nearing expiry (~42 days). Reorder soon.",
       notesBurmese: "၂ ဘူးသာ ကျန်တော့သည်။ သက်တမ်းကုန်ရန် ၄၂ ရက်သာ လိုတော့သဖြင့် အသစ်မှာယူရန်။",
       image: "https://images.unsplash.com/photo-1584017911766-d451b3d0e843?w=400&auto=format&fit=crop&q=80",
@@ -342,6 +351,98 @@ export function getInitialItems() {
       notesBurmese: "စတော့ဖူလုံသည်။ အလုပ်သမားများနှင့် အနီးနားဝပ်ရှော့များမှ ဝယ်လိုအားများသည်။",
       image: "https://images.unsplash.com/photo-1603398938378-e54eab446dde?w=400&auto=format&fit=crop&q=80",
       svgIcon: "bandage"
+    },
+
+    // --- GROCERIES SECTION ---
+    {
+      id: "groc-001",
+      section: "Groceries",
+      name: "Maggi 2-Minute Noodles Kari (5 x 79g)",
+      aliasBurmese: "မာဂီ မာဆလာအရသာ ခေါက်ဆွဲ (၅ ထုပ်ပါ)",
+      aliasEnglish: "Maggi Instant Noodles Curry Flavor (5-Pack)",
+      category: "Instant Food & Noodles",
+      categoryBurmese: "အသင့်စား အစားအစာနှင့် ခေါက်ဆွဲ",
+      shelfLocation: "Aisle 2 - Rack G1 (Middle)",
+      shelfLocationBurmese: "စင်တန်း ၂ - စင် G1 (အလယ်ထပ်)",
+      price: 5.60,
+      stockStatus: "in_stock",
+      stockQty: 28,
+      priceTagChecked: true,
+      checkedToday: true,
+      lastCheckedTime: new Date(now.getTime() - 10 * 60000).toISOString(),
+      expiryDate: addDays(180),
+      notes: "Fast moving food item. High turnover.",
+      notesBurmese: "အရောင်းသွက်သော အဓိက စားသောက်ကုန် ဖြစ်သည်။",
+      image: "https://images.unsplash.com/photo-1612927601601-6638404737ce?w=400&auto=format&fit=crop&q=80",
+      svgIcon: "noodle"
+    },
+    {
+      id: "groc-002",
+      section: "Groceries",
+      name: "Milo Activ-Go Chocolate Malt (1kg)",
+      aliasBurmese: "မိုင်လို ချောကလက်မုန့်မှုန့် (၁ ကီလို အိတ်ကြီး)",
+      aliasEnglish: "Nestle Milo Chocolate Malt Drink Refill 1kg",
+      category: "Beverages & Malt",
+      categoryBurmese: "ဖျော်ရည်နှင့် ချောကလက်မုန့်မှုန့်",
+      shelfLocation: "Aisle 2 - Rack G2 (Top)",
+      shelfLocationBurmese: "စင်တန်း ၂ - စင် G2 (အပေါ်ထပ်)",
+      price: 21.90,
+      stockStatus: "low_stock",
+      stockQty: 3,
+      priceTagChecked: true,
+      checkedToday: false,
+      lastCheckedTime: null,
+      expiryDate: addDays(300),
+      notes: "Only 3 bags left. Need to reorder with Nestle distributor.",
+      notesBurmese: "၃ ထုပ်သာ ကျန်တော့သဖြင့် Nestle ဖြန့်ချိရေးထံ ထပ်မှာရန်။",
+      image: "https://images.unsplash.com/photo-1541658016709-82535e94bc69?w=400&auto=format&fit=crop&q=80",
+      svgIcon: "milo"
+    },
+
+    // --- SNACKS & DRINKS SECTION ---
+    {
+      id: "snk-001",
+      section: "SnacksDrinks",
+      name: "100 Plus Isotonic Drink (500ml)",
+      aliasBurmese: "၁၀၀ ပလပ်စ် အားဖြည့်အချိုရည် (၅၀၀ မီလီလီတာ)",
+      aliasEnglish: "100 Plus Original Isotonic Hydration 500ml",
+      category: "Cold Drinks & Hydration",
+      categoryBurmese: "အအေးနှင့် အားဖြည့်အချိုရည်",
+      shelfLocation: "Chiller 1 - Middle Shelf",
+      shelfLocationBurmese: "အအေးခန်း ၁ - အလယ်စင် (Chiller 1)",
+      price: 2.80,
+      stockStatus: "in_stock",
+      stockQty: 16,
+      priceTagChecked: true,
+      checkedToday: true,
+      lastCheckedTime: new Date(now.getTime() - 30 * 60000).toISOString(),
+      expiryDate: addDays(210),
+      notes: "Keep stocked cold in chiller. Restock when below 6 bottles.",
+      notesBurmese: "ရေခဲသေတ္တာအတွင်း အမြဲအေးနေစေရန် စီထားပါ။ ၆ ဘူးအောက် လျော့ပါက ဖြည့်ပါ။",
+      image: "https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=400&auto=format&fit=crop&q=80",
+      svgIcon: "drink"
+    },
+    {
+      id: "snk-002",
+      section: "SnacksDrinks",
+      name: "Mamee Monster Noodle Snack BBQ (8 x 25g)",
+      aliasBurmese: "မာမီ မွန်းစတား အကြော်မုန့် (ဘီဘီကျူးအရသာ)",
+      aliasEnglish: "Mamee Monster BBQ Noodle Snack Family Pack",
+      category: "Crisps & Snacks",
+      categoryBurmese: "မုန့်ကြွပ်နှင့် သရေစာ",
+      shelfLocation: "Snack Rack S1 (Eye Level)",
+      shelfLocationBurmese: "မုန့်စင် S1 (မျက်စိတစ်ဆုံးထပ်)",
+      price: 3.50,
+      stockStatus: "out_of_stock",
+      stockQty: 0,
+      priceTagChecked: false, // Missing tag!
+      checkedToday: false,
+      lastCheckedTime: null,
+      expiryDate: addDays(75), // Expiring in 75 days! (<90d)
+      notes: "Completely out of stock on snack rack. Need to print price tag RM 3.50.",
+      notesBurmese: "မုန့်စင်တွင် ကုန်သွားသည်။ RM 3.50 ဈေးနှုန်းကတ်ပြား အသစ်ကပ်ရန်နှင့် ထပ်မှာရန်။",
+      image: "https://images.unsplash.com/photo-1566478989037-eec170784d0b?w=400&auto=format&fit=crop&q=80",
+      svgIcon: "snack"
     }
   ];
 }
